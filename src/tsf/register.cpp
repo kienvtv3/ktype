@@ -120,6 +120,12 @@ static void UnregisterProfiles() {
         profileMgr->UnregisterProfile(Globals::CLSID_TextService,
             Globals::TextServiceLangId, Globals::GUID_Profile, 0);
     }
+
+    // UnregisterProfile removes the profile but leaves the parent TIP key.
+    // Manually delete it to prevent ghost IME entries after uninstall.
+    std::wstring clsidStr = ClsidToString(Globals::CLSID_TextService);
+    std::wstring tipPath = L"SOFTWARE\\Microsoft\\CTF\\TIP\\" + clsidStr;
+    RegDeleteTreeW(HKEY_LOCAL_MACHINE, tipPath.c_str());
 }
 
 static void UnregisterCategories() {

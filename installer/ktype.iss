@@ -7,6 +7,11 @@
   #define MyAppVersion "0.1.0"
 #endif
 
+; KType TSF identifiers (must match globals.cpp)
+#define KTypeCLSID   "{7E8F1A2B-3C4D-5E6F-A1B2-C3D4E5F67890}"
+#define KTypeProfile "{8F9A2B3C-4D5E-6F7A-B2C3-D4E5F6789012}"
+#define KTypeTip     "042A:{7E8F1A2B-3C4D-5E6F-A1B2-C3D4E5F67890}{8F9A2B3C-4D5E-6F7A-B2C3-D4E5F6789012}"
+
 [Setup]
 AppId={{E8F2A1B3-4C5D-6E7F-8A9B-0C1D2E3F4A5B}
 AppName={#MyAppName}
@@ -33,13 +38,15 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
 Source: "..\build\x64\Release\KType.dll"; DestDir: "{app}"; Flags: ignoreversion regserver
+Source: "setup-keyboard.ps1"; DestDir: "{app}"; Flags: ignoreversion
+Source: "cleanup-keyboard.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Run]
-; After DLL registration, remove the default Vietnamese keyboard that Windows auto-adds
+; After DLL registration: add KType to Vietnamese language, remove Telex
 Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$l = Get-WinUserLanguageList; foreach ($lang in $l) {{ if ($lang.LanguageTag -like 'vi*') {{ $remove = @(); foreach ($tip in $lang.InputMethodTips) {{ if ($tip -like '042A:0000042A*') {{ $remove += $tip }} }}; foreach ($t in $remove) {{ $lang.InputMethodTips.Remove($t) | Out-Null }} }} }}; Set-WinUserLanguageList $l -Force"""; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\setup-keyboard.ps1"""; \
   Flags: runhidden waituntilterminated; \
   StatusMsg: "Configuring keyboard layout..."
 
@@ -50,12 +57,12 @@ var
 begin
   if CurUninstallStep = usUninstall then
   begin
-    // Unregister the COM server before removing files
-    Exec('regsvr32.exe', '/u /s "' + ExpandConstant('{app}\KType.dll') + '"',
-         '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    // Remove the default Vietnamese keyboard that Windows auto-adds after unregister
+    // Step 1: Remove KType from language list, restore Vietnamese Telex
     Exec('powershell.exe',
-         '-NoProfile -ExecutionPolicy Bypass -Command "$l = Get-WinUserLanguageList; foreach ($lang in $l) { if ($lang.LanguageTag -like ''vi*'') { $remove = @(); foreach ($tip in $lang.InputMethodTips) { if ($tip -like ''042A:0000042A*'') { $remove += $tip } }; foreach ($t in $remove) { $lang.InputMethodTips.Remove($t) | Out-Null } } }; Set-WinUserLanguageList $l -Force"',
+         '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\cleanup-keyboard.ps1') + '"',
+         '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    // Step 2: Unregister the COM server
+    Exec('regsvr32.exe', '/u /s "' + ExpandConstant('{app}\KType.dll') + '"',
          '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 end;
