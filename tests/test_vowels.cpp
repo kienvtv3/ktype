@@ -27,9 +27,6 @@ bool test_w_undo() { ASSERT_WSTR_EQ(commit("oww"), L"o"); return true; }
 // oa, ua W transitions
 bool test_oaw() { ASSERT_WSTR_EQ(commit("oaw"), L"o\x0103"); return true; }  // oă
 
-// ư+o → ươ (relaxed horn via vowel transition)
-bool test_uw_then_o() { ASSERT_WSTR_EQ(commit("uwon"), L"\x01b0\x01a1n"); return true; }  // ươn
-
 void run_vowel_tests() {
     printf("Vowel tests:\n");
     RUN_TEST(test_aa);
@@ -45,6 +42,5 @@ void run_vowel_tests() {
     RUN_TEST(test_w_standalone);
     RUN_TEST(test_w_undo);
     RUN_TEST(test_oaw);
-    RUN_TEST(test_uw_then_o);
     printf("\n");
 }

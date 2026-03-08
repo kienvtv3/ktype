@@ -74,9 +74,6 @@ inline const VTransition VowelTransitions[] = {
 
     // Reverse: ô+o → oo (undo circumflex, for "xooong" → "xoong")
     { L"\x00f4o", L"oo" },
-
-    // Relaxed: ư+o → ươ (horn already on u via W, typing 'o' adds horn to o too)
-    { L"\x01b0o", L"\x01b0\x01a1" },
 };
 
 // W-key transitions (horn: adds hook to o/u)
