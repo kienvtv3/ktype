@@ -72,11 +72,23 @@ STDMETHODIMP ContextManager::OnKeyDown(ITfContext* tfContext, WPARAM wParam, LPA
     BYTE keyState[256];
     if (!GetKeyboardState(keyState)) return S_OK;
 
-    // Modifiers: composition already committed in OnTestKeyDown, pass through
-    if (KeyTranslator::HasModifiers(keyState)) return S_OK;
-
     Context* ctx = GetOrCreateContext(tfContext);
     if (ctx->IsBlocked()) return S_OK;
+
+    // Modifiers: retry ending composition if OnTestKeyDown's async session didn't execute yet
+    // VietType also tries twice (OnTestKeyDown + OnKeyDown) for reliability
+    if (KeyTranslator::HasModifiers(keyState)) {
+        if (ctx->IsComposing()) {
+            auto* session = new EditSession([ctx](TfEditCookie ec) -> HRESULT {
+                return ctx->EndCompositionNow(ec);
+            });
+            HRESULT hrSession;
+            tfContext->RequestEditSession(_clientId, session,
+                TF_ES_ASYNCDONTCARE | TF_ES_READWRITE, &hrSession);
+            session->Release();
+        }
+        return S_OK;
+    }
 
     // Backspace
     if (wParam == VK_BACK && ctx->HasPendingInput()) {

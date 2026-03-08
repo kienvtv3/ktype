@@ -196,6 +196,20 @@ HRESULT Context::EndCompositionNow(TfEditCookie ec) {
     if (!_composition) return S_OK;
 
     // End composition without changing text — leave preview text as-is (VietType behavior)
+    // Move caret to end first so apps see proper cursor position after composition ends
+    ATL::CComPtr<ITfRange> range;
+    if (SUCCEEDED(_composition->GetRange(&range))) {
+        ATL::CComPtr<ITfRange> caretRange;
+        if (SUCCEEDED(range->Clone(&caretRange))) {
+            caretRange->Collapse(ec, TF_ANCHOR_END);
+            TF_SELECTION sel = {};
+            sel.range = caretRange;
+            sel.style.ase = TF_AE_END;
+            sel.style.fInterimChar = FALSE;
+            _tfContext->SetSelection(ec, 1, &sel);
+        }
+    }
+
     _composition->EndComposition(ec);
     _composition.Release();
     _engine.Reset();
