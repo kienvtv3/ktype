@@ -9,6 +9,7 @@ void run_word_tests();
 void run_edge_case_tests();
 void run_backspace_tests();
 void run_case_tests();
+void run_viettype_tests();
 
 int main() {
     printf("=== KType Telex Engine Tests ===\n\n");
@@ -20,6 +21,7 @@ int main() {
     run_edge_case_tests();
     run_backspace_tests();
     run_case_tests();
+    run_viettype_tests();
 
     printf("\n=== Results: %d/%d passed", g_passed, g_total);
     if (g_failed > 0) printf(", %d FAILED", g_failed);

@@ -57,6 +57,22 @@ bool test_vt_khongo() { ASSERT_WSTR_EQ(commit("khongo"), L"kh\x00f4ng"); return 
 // caasy → cấy (aa→â, s=sắc→ấ, y→ây)
 bool test_vt_caasy() { ASSERT_WSTR_EQ(commit("caasy"), L"c\x1ea5y"); return true; }                   // cấy
 
+// English word collision: optimize_multilang rejects known English words (wlist_en)
+bool test_vt_english_virus()  { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("virus", c), L"virus"); return true; }
+bool test_vt_english_horse()  { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("horse", c), L"horse"); return true; }
+bool test_vt_english_surf()   { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("surf", c), L"surf"); return true; }
+bool test_vt_english_doors()  { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("doors", c), L"doors"); return true; }
+// Level 2 words only rejected at level >=2
+bool test_vt_english_desk_l2()  { TelexConfig c; c.optimize_multilang = 2; ASSERT_WSTR_EQ(commit("desk", c), L"desk"); return true; }
+bool test_vt_english_ghost_l2() { TelexConfig c; c.optimize_multilang = 2; ASSERT_WSTR_EQ(commit("ghost", c), L"ghost"); return true; }
+// Case insensitive: uppercase English words also rejected
+bool test_vt_english_Horse()  { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("Horse", c), L"Horse"); return true; }
+bool test_vt_english_VIRUS()  { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("VIRUS", c), L"VIRUS"); return true; }
+// optimize_multilang=0: word list check disabled, processed as Vietnamese
+bool test_vt_english_off()    { TelexConfig c; c.optimize_multilang = 0; ASSERT_WSTR_EQ(commit("virus", c), L"v\x00edu"); return true; }  // víu
+// Level-2 word NOT rejected at level 1, processed as Vietnamese
+bool test_vt_english_desk_l1() { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("desk", c), L"d\x00e9k"); return true; }  // dék
+
 void run_viettype_tests() {
     printf("VietType compatibility tests:\n");
     RUN_TEST(test_vt_ddas);
@@ -86,5 +102,15 @@ void run_viettype_tests() {
     RUN_TEST(test_vt_peek_ddd);
     RUN_TEST(test_vt_khongo);
     RUN_TEST(test_vt_caasy);
+    RUN_TEST(test_vt_english_virus);
+    RUN_TEST(test_vt_english_horse);
+    RUN_TEST(test_vt_english_surf);
+    RUN_TEST(test_vt_english_doors);
+    RUN_TEST(test_vt_english_desk_l2);
+    RUN_TEST(test_vt_english_ghost_l2);
+    RUN_TEST(test_vt_english_Horse);
+    RUN_TEST(test_vt_english_VIRUS);
+    RUN_TEST(test_vt_english_off);
+    RUN_TEST(test_vt_english_desk_l1);
     printf("\n");
 }

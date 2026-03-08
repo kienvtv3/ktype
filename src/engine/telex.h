@@ -26,6 +26,7 @@ struct TelexConfig {
     // false = old style: tone on first vowel (hòa, ùy)
     bool oa_uy_tone1 = true;
     bool accept_separate_dd = true;  // Allow dd→đ even after vowels typed
+    int optimize_multilang = 1;      // 0=off, 1=basic (wlist_en), 2=extended (+ wlist_en_2)
 };
 
 class TelexEngine {

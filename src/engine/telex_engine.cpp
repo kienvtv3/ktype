@@ -1,5 +1,6 @@
 #include "telex.h"
 #include "telex_data.h"
+#include "wordlist.h"
 #include <algorithm>
 #include <cwctype>
 
@@ -412,6 +413,22 @@ TelexStates TelexEngine::Commit() {
         _result.clear();
         _state = TelexStates::Committed;
         return _state;
+    }
+
+    // English word optimization: reject known English words
+    if (_config.optimize_multilang >= 1) {
+        std::wstring lower = _keyBuffer;
+        for (auto& ch : lower) ch = (wchar_t)towlower(ch);
+        if (WordListEn().count(lower)) {
+            _result = _keyBuffer;
+            _state = TelexStates::CommittedInvalid;
+            return _state;
+        }
+        if (_config.optimize_multilang >= 2 && WordListEn2().count(lower)) {
+            _result = _keyBuffer;
+            _state = TelexStates::CommittedInvalid;
+            return _state;
+        }
     }
 
     // "gi" fixup: if C1 is "gi" and V is empty, move 'i' from C1 to V

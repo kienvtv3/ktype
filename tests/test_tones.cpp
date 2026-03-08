@@ -16,7 +16,7 @@ bool test_tone_y() { ASSERT_WSTR_EQ(commit("ys"), L"\x00fd"); return true; }  //
 
 // Tones on modified vowels
 bool test_tone_aw() { ASSERT_WSTR_EQ(commit("awns"), L"\x1eafn"); return true; }  // ắn (ă requires C2)
-bool test_tone_aa() { ASSERT_WSTR_EQ(commit("aas"), L"\x1ea5"); return true; }  // ấ
+bool test_tone_aa() { ASSERT_WSTR_EQ(commit("aans"), L"\x1ea5n"); return true; }  // ấn (â requires C2)
 bool test_tone_ee() { ASSERT_WSTR_EQ(commit("ees"), L"\x1ebf"); return true; }  // ế
 bool test_tone_oo() { ASSERT_WSTR_EQ(commit("oos"), L"\x1ed1"); return true; }  // ố
 bool test_tone_ow() { ASSERT_WSTR_EQ(commit("ows"), L"\x1edb"); return true; }  // ớ

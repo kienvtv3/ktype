@@ -1,7 +1,7 @@
 #include "test_helper.h"
 
 // Circumflex vowels (doubling)
-bool test_aa() { ASSERT_WSTR_EQ(commit("aa"), L"\x00e2"); return true; }   // â
+bool test_aa() { ASSERT_WSTR_EQ(commit("aa"), L"aa"); return true; }       // â requires C2 → invalid bare
 bool test_ee() { ASSERT_WSTR_EQ(commit("ee"), L"\x00ea"); return true; }   // ê
 bool test_oo() { ASSERT_WSTR_EQ(commit("oo"), L"\x00f4"); return true; }   // ô
 

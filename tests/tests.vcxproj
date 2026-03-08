@@ -49,6 +49,7 @@
     <ClCompile Include="test_edge_cases.cpp" />
     <ClCompile Include="test_backspace.cpp" />
     <ClCompile Include="test_case.cpp" />
+    <ClCompile Include="test_viettype.cpp" />
   </ItemGroup>
 
   <ItemGroup>

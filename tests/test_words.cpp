@@ -21,6 +21,15 @@ bool test_nam()    { ASSERT_WSTR_EQ(commit("nawm"), L"n\x0103m"); return true; }
 bool test_pho()    { ASSERT_WSTR_EQ(commit("phowf"), L"ph\x1edd"); return true; }         // phờ
 bool test_gi()     { ASSERT_WSTR_EQ(commit("gias"), L"gi\x00e1"); return true; }           // giá
 
+// Tone placement: "của" not "cuả" (tonePos=0 on "ua")
+bool test_cua()    { ASSERT_WSTR_EQ(commit("cuar"), L"c\x1ee7" L"a"); return true; }               // của
+bool test_mua()    { ASSERT_WSTR_EQ(commit("muaf"), L"m\x00f9" L"a"); return true; }               // mùa
+bool test_lua()    { ASSERT_WSTR_EQ(commit("luas"), L"l\x00fa" L"a"); return true; }               // lúa
+
+// â requires C2
+bool test_an()     { ASSERT_WSTR_EQ(commit("aan"), L"\x00e2n"); return true; }                     // ân
+bool test_at()     { ASSERT_WSTR_EQ(commit("aats"), L"\x1ea5t"); return true; }                    // ất
+
 // The three critical bug-fix tests
 bool test_duoc()   { ASSERT_WSTR_EQ(commit("dduowcj"), L"\x0111\x01b0\x1ee3" L"c"); return true; }  // được
 bool test_viet2()  { ASSERT_WSTR_EQ(commit("vieest"), L"vi\x1ebft"); return true; }                  // viết
@@ -73,6 +82,11 @@ void run_word_tests() {
     RUN_TEST(test_nam);
     RUN_TEST(test_pho);
     RUN_TEST(test_gi);
+    RUN_TEST(test_cua);
+    RUN_TEST(test_mua);
+    RUN_TEST(test_lua);
+    RUN_TEST(test_an);
+    RUN_TEST(test_at);
     RUN_TEST(test_duoc);
     RUN_TEST(test_viet2);
     RUN_TEST(test_nua);
