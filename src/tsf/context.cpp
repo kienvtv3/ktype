@@ -180,4 +180,14 @@ HRESULT Context::EndComposition(TfEditCookie ec, const std::wstring& finalText) 
     return S_OK;
 }
 
+HRESULT Context::EndCompositionNow(TfEditCookie ec) {
+    if (!_composition) return S_OK;
+
+    // End composition without changing text — leave preview text as-is (VietType behavior)
+    _composition->EndComposition(ec);
+    _composition.Release();
+    _engine.Reset();
+    return S_OK;
+}
+
 } // namespace KType

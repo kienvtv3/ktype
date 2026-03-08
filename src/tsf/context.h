@@ -23,12 +23,14 @@ public:
     HRESULT CommitComposition(TfEditCookie ec);
     HRESULT CommitAndInsertChar(TfEditCookie ec, wchar_t ch);
     HRESULT CancelComposition(TfEditCookie ec);
+    HRESULT EndCompositionNow(TfEditCookie ec);
 
     bool IsComposing() const { return _composition != nullptr; }
     bool HasPendingInput() const { return !_engine.IsEmpty(); }
     ITfContext* GetTfContext() const { return _tfContext; }
     HRESULT RequestCommit();
     bool IsBlocked() const { return _blocked; }
+    TelexEngine& GetEngine() { return _engine; }
 
 private:
     HRESULT StartComposition(TfEditCookie ec);

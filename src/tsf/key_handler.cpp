@@ -14,10 +14,17 @@ STDMETHODIMP ContextManager::OnTestKeyDown(ITfContext* tfContext, WPARAM wParam,
     Context* ctx = GetOrCreateContext(tfContext);
     if (ctx->IsBlocked()) return S_OK;
 
-    // Ctrl/Alt modifiers: commit composition if active, then pass through (VietType behavior)
+    // Ctrl/Alt modifiers: end composition then pass through (VietType behavior)
+    // Uses async edit session — TSF executes immediately if document available
     if (KeyTranslator::HasModifiers(keyState)) {
-        if (ctx->HasPendingInput()) {
-            ctx->RequestCommit();
+        if (ctx->IsComposing()) {
+            auto* session = new EditSession([ctx](TfEditCookie ec) -> HRESULT {
+                return ctx->EndCompositionNow(ec);
+            });
+            HRESULT hrSession;
+            tfContext->RequestEditSession(_clientId, session,
+                TF_ES_ASYNCDONTCARE | TF_ES_READWRITE, &hrSession);
+            session->Release();
         }
         return S_OK;
     }
