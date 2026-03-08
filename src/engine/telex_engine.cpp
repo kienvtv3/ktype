@@ -228,6 +228,13 @@ bool TelexEngine::TryAddC2(wchar_t c) {
     std::wstring candidate = _c2 + c;
 
     if (TelexData::ValidC2.count(candidate)) {
+        // Apply vowel adjustments for C2 context
+        for (const auto& t : TelexData::WvC2Transitions) {
+            if (_v == t.from) {
+                _v = t.to;
+                break;
+            }
+        }
         _c2 = candidate;
         return true;
     }

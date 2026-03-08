@@ -102,6 +102,14 @@ inline const WTransition WATransitions[] = {
     { L"ua",   L"u\x0103" },                     // ua -> u a-breve
 };
 
+// Vowel adjustments triggered when C2 is typed (VietType: transitions_wv_c2)
+// These adjust the vowel form based on whether a final consonant follows.
+inline const WTransition WvC2Transitions[] = {
+    { L"u\x01a1",          L"\x01b0\x01a1" },     // uơ → ươ
+    { L"\x01b0" L"a",      L"u\x0103" },           // ưa → uă
+    { L"\x01b0o",          L"\x01b0\x01a1" },       // ưo → ươ
+};
+
 // Valid onset consonants (C1)
 inline const std::unordered_set<std::wstring> ValidC1 = {
     L"", L"b", L"c", L"ch", L"d", L"g", L"gh", L"gi",
