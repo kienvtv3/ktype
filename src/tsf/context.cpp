@@ -173,6 +173,18 @@ HRESULT Context::EndComposition(TfEditCookie ec, const std::wstring& finalText) 
     HRESULT hr = _composition->GetRange(&range);
     if (SUCCEEDED(hr)) {
         range->SetText(ec, 0, finalText.c_str(), (LONG)finalText.size());
+
+        // Move caret to end of committed text
+        // Without this, some apps (e.g. Explorer search bar) leave caret at start
+        ATL::CComPtr<ITfRange> caretRange;
+        if (SUCCEEDED(range->Clone(&caretRange))) {
+            caretRange->Collapse(ec, TF_ANCHOR_END);
+            TF_SELECTION sel = {};
+            sel.range = caretRange;
+            sel.style.ase = TF_AE_END;
+            sel.style.fInterimChar = FALSE;
+            _tfContext->SetSelection(ec, 1, &sel);
+        }
     }
 
     _composition->EndComposition(ec);
