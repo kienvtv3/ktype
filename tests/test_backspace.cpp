@@ -51,7 +51,7 @@ bool test_bs_mid_word() {
     push(e, "vieejt");  // việt
     e.Backspace();      // remove 't' → việ
     e.Commit();
-    ASSERT_WSTR_EQ(e.Retrieve(), L"vi\x1ec7"); // việ
+    ASSERT_WSTR_EQ(e.Retrieve(), L"vieej"); // iê requires C2 → invalid (raw)
     return true;
 }
 

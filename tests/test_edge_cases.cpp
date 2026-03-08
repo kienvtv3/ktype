@@ -81,6 +81,18 @@ bool test_peek() {
     return true;
 }
 
+// C2Mode: MustC2 — iê requires coda
+bool test_ie_no_c2()   { ASSERT_WSTR_EQ(commit("iee"), L"iee"); return true; }          // iê alone → invalid
+bool test_ie_with_c2() { ASSERT_WSTR_EQ(commit("ieeng"), L"i\x00eang"); return true; }  // iêng → valid
+
+// C2Mode: NoC2 — ai forbids coda
+bool test_ai_no_c2()   { ASSERT_WSTR_EQ(commit("ai"), L"ai"); return true; }             // ai → valid
+bool test_ai_with_c2() { ASSERT_WSTR_EQ(commit("ain"), L"ain"); return true; }           // ain → invalid (raw)
+
+// C2Mode: uô requires C2
+bool test_uo_no_c2()   { ASSERT_WSTR_EQ(commit("uoo"), L"uoo"); return true; }          // uô alone → invalid
+bool test_uo_with_c2() { ASSERT_WSTR_EQ(commit("uoong"), L"u\x00f4ng"); return true; }  // uông → valid
+
 // gi handling: gi is C1, vowel after gi works normally
 bool test_gi_a() {
     ASSERT_WSTR_EQ(commit("gia"), L"gia");
@@ -103,6 +115,12 @@ void run_edge_case_tests() {
     RUN_TEST(test_cancel);
     RUN_TEST(test_empty_commit);
     RUN_TEST(test_peek);
+    RUN_TEST(test_ie_no_c2);
+    RUN_TEST(test_ie_with_c2);
+    RUN_TEST(test_ai_no_c2);
+    RUN_TEST(test_ai_with_c2);
+    RUN_TEST(test_uo_no_c2);
+    RUN_TEST(test_uo_with_c2);
     RUN_TEST(test_gi_a);
     RUN_TEST(test_gi_tone);
     printf("\n");

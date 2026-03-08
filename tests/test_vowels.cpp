@@ -11,12 +11,12 @@ bool test_ow() { ASSERT_WSTR_EQ(commit("ow"), L"\x01a1"); return true; }   // ơ
 bool test_uw() { ASSERT_WSTR_EQ(commit("uw"), L"\x01b0"); return true; }   // ư
 
 // Di-vowel transitions (doubling triggers circumflex)
-bool test_ie() { ASSERT_WSTR_EQ(commit("iee"), L"i\x00ea"); return true; }   // iê (iee)
-bool test_ye() { ASSERT_WSTR_EQ(commit("yee"), L"y\x00ea"); return true; }   // yê (yee)
-bool test_uo() { ASSERT_WSTR_EQ(commit("uoo"), L"u\x00f4"); return true; }   // uô (uoo)
+bool test_ie() { ASSERT_WSTR_EQ(commit("iee"), L"iee"); return true; }       // iê requires C2 → invalid
+bool test_ye() { ASSERT_WSTR_EQ(commit("yee"), L"yee"); return true; }       // yê requires C2 → invalid
+bool test_uo() { ASSERT_WSTR_EQ(commit("uoo"), L"uoo"); return true; }       // uô requires C2 → invalid
 
 // ươ via uw + ow
-bool test_uwow() { ASSERT_WSTR_EQ(commit("uwow"), L"\x01b0\x01a1"); return true; }  // ươ
+bool test_uwow() { ASSERT_WSTR_EQ(commit("uwow"), L"uwow"); return true; }  // ươ requires C2 → invalid
 
 // Standalone W
 bool test_w_standalone() { ASSERT_WSTR_EQ(commit("w"), L"\x01b0"); return true; }  // ư

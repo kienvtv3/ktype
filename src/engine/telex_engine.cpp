@@ -403,6 +403,21 @@ TelexStates TelexEngine::Commit() {
         return _state;
     }
 
+    // Validate C2Mode constraints
+    if (!_v.empty() && VowelMap().count(_v)) {
+        const auto& vi = VowelMap().at(_v);
+        if (vi.requiresC2 && _c2.empty()) {
+            _result = _keyBuffer;
+            _state = TelexStates::CommittedInvalid;
+            return _state;
+        }
+        if (vi.forbidsC2 && !_c2.empty()) {
+            _result = _keyBuffer;
+            _state = TelexStates::CommittedInvalid;
+            return _state;
+        }
+    }
+
     // Validate C2
     if (!_c2.empty() && !TelexData::ValidC2.count(_c2)) {
         _result = _keyBuffer;
