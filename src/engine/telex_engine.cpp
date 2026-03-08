@@ -365,7 +365,7 @@ void TelexEngine::ApplyCases(std::wstring& result) const {
     // Apply cases to C1 portion
     for (size_t i = 0; i < c1Len && outputIdx < result.size() && inputIdx < _cases.size(); i++, outputIdx++, inputIdx++) {
         if (_cases[inputIdx]) {
-            result[outputIdx] = (wchar_t)towupper(result[outputIdx]);
+            result[outputIdx] = TelexData::VnToUpper(result[outputIdx]);
         }
     }
 
@@ -377,7 +377,7 @@ void TelexEngine::ApplyCases(std::wstring& result) const {
     // Apply cases to vowel portion
     for (size_t i = 0; i < vLen && outputIdx < result.size() && inputIdx < _cases.size(); i++, outputIdx++, inputIdx++) {
         if (_cases[inputIdx]) {
-            result[outputIdx] = (wchar_t)towupper(result[outputIdx]);
+            result[outputIdx] = TelexData::VnToUpper(result[outputIdx]);
         }
     }
 
@@ -396,7 +396,7 @@ void TelexEngine::ApplyCases(std::wstring& result) const {
     // For simplicity: just map remaining input to C2
     for (; outputIdx < result.size() && inputIdx < _cases.size(); outputIdx++, inputIdx++) {
         if (_cases[inputIdx]) {
-            result[outputIdx] = (wchar_t)towupper(result[outputIdx]);
+            result[outputIdx] = TelexData::VnToUpper(result[outputIdx]);
         }
     }
 }
@@ -520,7 +520,7 @@ void TelexEngine::Replay() {
         wchar_t c = saved[i];
         // Restore original case
         if (i < savedCases.size() && savedCases[i]) {
-            c = (wchar_t)towupper(c);
+            c = TelexData::VnToUpper(c);
         }
         PushChar(c);
     }

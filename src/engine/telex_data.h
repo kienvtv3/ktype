@@ -160,14 +160,14 @@ inline const VowelInfo ValidVowels[] = {
     { L"u",    0, false, false },
     { L"y",    0, false, true  },  // y: forbids C2 (VietType)
     { L"\x0103", 0, true, false },   // a-breve: requires C2
-    { L"\x00e2", 0, false, false },  // a-circumflex
+    { L"\x00e2", 0, true, false },   // a-circumflex: requires C2 (VietType)
     { L"\x00ea", 0, false, false },  // e-circumflex
     { L"\x00f4", 0, false, false },  // o-circumflex
     { L"\x01a1", 0, false, false },  // o-horn
     { L"\x01b0", 0, false, false },  // u-horn
 
     // Two-vowel combinations
-    { L"oo",   0, true, false },    // double-o: requires C2 (VietType)
+    { L"oo",   1, true, false },    // double-o: requires C2, tonePos=1 (VietType)
     { L"ai",   0, false, true  },
     { L"ao",   0, false, true  },
     { L"au",   0, false, true  },
@@ -183,7 +183,7 @@ inline const VowelInfo ValidVowels[] = {
     { L"oi",   0, false, true  },
     { L"\x00f4i", 0, false, true  },  // o-circumflex i
     { L"\x01a1i", 0, false, true  },  // o-horn i
-    { L"ua",   1, false, false },
+    { L"ua",   0, false, true  },   // ua: tonePos=0 (của not cuả), forbids C2 (VietType)
     { L"ue",   1, false, false },
     { L"ui",   0, false, true  },
     { L"uy",   1, false, false },
@@ -278,6 +278,81 @@ inline bool IsConsonant(wchar_t c) {
         return true;
     default:
         return false;
+    }
+}
+
+// Custom Vietnamese uppercase mapping (towupper fails for Vietnamese diacritics)
+inline wchar_t VnToUpper(wchar_t c) {
+    if (c >= L'a' && c <= L'z') return c - 32;
+    switch (c) {
+    case L'\x0111': return L'\x0110'; // đ→Đ
+    case L'\x0103': return L'\x0102'; // ă→Ă
+    case L'\x1eaf': return L'\x1eae'; // ắ→Ắ
+    case L'\x1eb1': return L'\x1eb0'; // ằ→Ằ
+    case L'\x1eb3': return L'\x1eb2'; // ẳ→Ẳ
+    case L'\x1eb5': return L'\x1eb4'; // ẵ→Ẵ
+    case L'\x1eb7': return L'\x1eb6'; // ặ→Ặ
+    case L'\x00e2': return L'\x00c2'; // â→Â
+    case L'\x1ea5': return L'\x1ea4'; // ấ→Ấ
+    case L'\x1ea7': return L'\x1ea6'; // ầ→Ầ
+    case L'\x1ea9': return L'\x1ea8'; // ẩ→Ẩ
+    case L'\x1eab': return L'\x1eaa'; // ẫ→Ẫ
+    case L'\x1ead': return L'\x1eac'; // ậ→Ậ
+    case L'\x00e1': return L'\x00c1'; // á→Á
+    case L'\x00e0': return L'\x00c0'; // à→À
+    case L'\x1ea3': return L'\x1ea2'; // ả→Ả
+    case L'\x00e3': return L'\x00c3'; // ã→Ã
+    case L'\x1ea1': return L'\x1ea0'; // ạ→Ạ
+    case L'\x00ea': return L'\x00ca'; // ê→Ê
+    case L'\x1ebf': return L'\x1ebe'; // ế→Ế
+    case L'\x1ec1': return L'\x1ec0'; // ề→Ề
+    case L'\x1ec3': return L'\x1ec2'; // ể→Ể
+    case L'\x1ec5': return L'\x1ec4'; // ễ→Ễ
+    case L'\x1ec7': return L'\x1ec6'; // ệ→Ệ
+    case L'\x00e9': return L'\x00c9'; // é→É
+    case L'\x00e8': return L'\x00c8'; // è→È
+    case L'\x1ebb': return L'\x1eba'; // ẻ→Ẻ
+    case L'\x1ebd': return L'\x1ebc'; // ẽ→Ẽ
+    case L'\x1eb9': return L'\x1eb8'; // ẹ→Ẹ
+    case L'\x00ed': return L'\x00cd'; // í→Í
+    case L'\x00ec': return L'\x00cc'; // ì→Ì
+    case L'\x1ec9': return L'\x1ec8'; // ỉ→Ỉ
+    case L'\x0129': return L'\x0128'; // ĩ→Ĩ
+    case L'\x1ecb': return L'\x1eca'; // ị→Ị
+    case L'\x00f4': return L'\x00d4'; // ô→Ô
+    case L'\x1ed1': return L'\x1ed0'; // ố→Ố
+    case L'\x1ed3': return L'\x1ed2'; // ồ→Ồ
+    case L'\x1ed5': return L'\x1ed4'; // ổ→Ổ
+    case L'\x1ed7': return L'\x1ed6'; // ỗ→Ỗ
+    case L'\x1ed9': return L'\x1ed8'; // ộ→Ộ
+    case L'\x01a1': return L'\x01a0'; // ơ→Ơ
+    case L'\x1edb': return L'\x1eda'; // ớ→Ớ
+    case L'\x1edd': return L'\x1edc'; // ờ→Ờ
+    case L'\x1edf': return L'\x1ede'; // ở→Ở
+    case L'\x1ee1': return L'\x1ee0'; // ỡ→Ỡ
+    case L'\x1ee3': return L'\x1ee2'; // ợ→Ợ
+    case L'\x00f3': return L'\x00d3'; // ó→Ó
+    case L'\x00f2': return L'\x00d2'; // ò→Ò
+    case L'\x1ecf': return L'\x1ece'; // ỏ→Ỏ
+    case L'\x00f5': return L'\x00d5'; // õ→Õ
+    case L'\x1ecd': return L'\x1ecc'; // ọ→Ọ
+    case L'\x01b0': return L'\x01af'; // ư→Ư
+    case L'\x1ee9': return L'\x1ee8'; // ứ→Ứ
+    case L'\x1eeb': return L'\x1eea'; // ừ→Ừ
+    case L'\x1eed': return L'\x1eec'; // ử→Ử
+    case L'\x1eef': return L'\x1eee'; // ữ→Ữ
+    case L'\x1ef1': return L'\x1ef0'; // ự→Ự
+    case L'\x00fa': return L'\x00da'; // ú→Ú
+    case L'\x00f9': return L'\x00d9'; // ù→Ù
+    case L'\x1ee7': return L'\x1ee6'; // ủ→Ủ
+    case L'\x0169': return L'\x0168'; // ũ→Ũ
+    case L'\x1ee5': return L'\x1ee4'; // ụ→Ụ
+    case L'\x00fd': return L'\x00dd'; // ý→Ý
+    case L'\x1ef3': return L'\x1ef2'; // ỳ→Ỳ
+    case L'\x1ef7': return L'\x1ef6'; // ỷ→Ỷ
+    case L'\x1ef9': return L'\x1ef8'; // ỹ→Ỹ
+    case L'\x1ef5': return L'\x1ef4'; // ỵ→Ỵ
+    default: return (wchar_t)towupper(c);
     }
 }
 

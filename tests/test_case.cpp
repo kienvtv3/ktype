@@ -10,7 +10,7 @@ bool test_upper_first() {
     return true;
 }
 
-// All uppercase — known limitation: towupper doesn't handle Vietnamese diacritics
+// All uppercase
 bool test_all_upper() {
     TelexEngine e;
     e.PushChar(L'V');
@@ -21,13 +21,11 @@ bool test_all_upper() {
     e.PushChar(L'T');
     e.Commit();
     std::wstring result = e.Retrieve();
-    // TODO: towupper doesn't handle Vietnamese diacritics on Windows
-    // Expected ideal: L"VIỆT" but towupper(ệ) fails
-    ASSERT_WSTR_EQ(result, L"VI\x1ec7T");
+    ASSERT_WSTR_EQ(result, L"VI\x1ec6T");
     return true;
 }
 
-// Uppercase dd — known limitation
+// Uppercase dd
 bool test_upper_dd() {
     TelexEngine e;
     e.PushChar(L'D');
@@ -35,8 +33,7 @@ bool test_upper_dd() {
     push(e, "a");
     e.Commit();
     std::wstring result = e.Retrieve();
-    // TODO: towupper(đ) doesn't produce Đ on Windows
-    ASSERT_WSTR_EQ(result, L"\x0111" L"a");
+    ASSERT_WSTR_EQ(result, L"\x0110" L"a");
     return true;
 }
 
