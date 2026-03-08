@@ -12,25 +12,45 @@ if (-not (Test-Path $subKey)) {
 }
 Set-ItemProperty -Path $subKey -Name '0000042a' -Value '00000409'
 
-$l = Get-WinUserLanguageList
+# Step 1: Use InstallLayoutOrTip API — more reliable than Set-WinUserLanguageList
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class InputApi {
+    [DllImport("input.dll", CharSet = CharSet.Unicode)]
+    public static extern bool InstallLayoutOrTip(string psz, uint flags);
+}
+"@
 
-# Step 1: Add Vietnamese language if not present
+# Ensure Vietnamese language exists
+$l = Get-WinUserLanguageList
 $vi = $l | Where-Object { $_.LanguageTag -like 'vi*' }
 if (-not $vi) {
     $l.Add('vi')
     Set-WinUserLanguageList $l -Force
     Start-Sleep -Seconds 2
-    $l = Get-WinUserLanguageList
 }
 
-# Step 2: For the Vietnamese language entry, add KType and remove everything else
+# Install KType as Vietnamese IME
+[InputApi]::InstallLayoutOrTip($ktypeTip, 0) | Out-Null
+
+# Remove default Vietnamese keyboard layout that Windows auto-adds
+# (it maps number keys to diacritics, conflicting with KType)
+[InputApi]::InstallLayoutOrTip('042A:0000042A', 1) | Out-Null
+
+# Clean up: ensure only KType under Vietnamese
+$l = Get-WinUserLanguageList
 foreach ($lang in $l) {
     if ($lang.LanguageTag -like 'vi*') {
-        # Remove all existing Vietnamese keyboards/IMEs
-        $lang.InputMethodTips.Clear()
-        # Add only KType
-        $lang.InputMethodTips.Add($ktypeTip)
+        # Remove any non-KType keyboards
+        $toRemove = @($lang.InputMethodTips | Where-Object { $_ -ne $ktypeTip })
+        foreach ($tip in $toRemove) {
+            $lang.InputMethodTips.Remove($tip) | Out-Null
+        }
+        # Ensure KType is present
+        if ($lang.InputMethodTips -notcontains $ktypeTip) {
+            $lang.InputMethodTips.Add($ktypeTip)
+        }
     }
 }
-
 Set-WinUserLanguageList $l -Force

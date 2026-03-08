@@ -148,6 +148,31 @@ static void UnregisterCategories() {
     }
 }
 
+// Map Vietnamese keyboard layout → US English in registry (VietType behavior)
+// Keys that KType doesn't eat pass through to the app, which uses the active
+// keyboard layout. Without this substitution, the Vietnamese layout maps
+// number keys to diacritics instead of digits.
+static void SetKeyboardSubstitution() {
+    HKEY hKey;
+    LONG result = RegCreateKeyExW(HKEY_CURRENT_USER, L"Keyboard Layout\\Substitutes",
+        0, nullptr, 0, KEY_WRITE, nullptr, &hKey, nullptr);
+    if (result == ERROR_SUCCESS) {
+        const wchar_t* usLayout = L"00000409";
+        RegSetValueExW(hKey, L"0000042a", 0, REG_SZ,
+            (const BYTE*)usLayout, (DWORD)(wcslen(usLayout) + 1) * sizeof(wchar_t));
+        RegCloseKey(hKey);
+    }
+}
+
+static void RemoveKeyboardSubstitution() {
+    HKEY hKey;
+    if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Keyboard Layout\\Substitutes",
+        0, KEY_WRITE, &hKey) == ERROR_SUCCESS) {
+        RegDeleteValueW(hKey, L"0000042a");
+        RegCloseKey(hKey);
+    }
+}
+
 } // namespace KType
 
 // Standard COM DLL registration exports
@@ -173,10 +198,14 @@ STDAPI DllRegisterServer() {
         return hr;
     }
 
+    // Step 4: Map Vietnamese keyboard layout to US English
+    KType::SetKeyboardSubstitution();
+
     return S_OK;
 }
 
 STDAPI DllUnregisterServer() {
+    KType::RemoveKeyboardSubstitution();
     KType::UnregisterProfiles();
     KType::UnregisterCategories();
     KType::UnregisterCOMServer();
