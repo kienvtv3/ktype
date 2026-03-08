@@ -1,5 +1,5 @@
 #define MyAppName "KType"
-#define MyAppPublisher "KType"
+#define MyAppPublisher "Kien Vu"
 #define MyAppURL "https://github.com/kienvtv3/ktype"
 
 ; Version is passed via /DMyAppVersion=x.y.z from command line
@@ -29,7 +29,8 @@ ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0
 PrivilegesRequired=admin
 UninstallDisplayName={#MyAppName}
-UninstallDisplayIcon={app}\KType.dll
+UninstallDisplayIcon={app}\ktype.ico
+SetupIconFile=ktype.ico
 WizardStyle=modern
 UsePreviousAppDir=yes
 
@@ -42,6 +43,7 @@ Source: "setup-keyboard.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "cleanup-keyboard.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+Source: "ktype.ico"; DestDir: "{app}"; Flags: ignoreversion
 
 [Run]
 ; After DLL registration: add KType to Vietnamese language, remove Telex

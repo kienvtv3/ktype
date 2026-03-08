@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "globals.h"
+#include "resource.h"
 
 namespace KType {
 
@@ -76,7 +77,7 @@ static HRESULT RegisterProfiles() {
         (ULONG)wcslen(Globals::TextServiceDescription),
         dllPath,
         (ULONG)wcslen(dllPath),
-        0,     // icon index
+        (ULONG)(-IDI_KTYPE),  // icon resource ID (negative = resource ID)
         NULL,  // hkl substitute
         0,     // preferred layout
         TRUE,  // enable by default
