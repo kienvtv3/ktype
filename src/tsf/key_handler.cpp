@@ -121,17 +121,16 @@ STDMETHODIMP ContextManager::OnKeyDown(ITfContext* tfContext, WPARAM wParam, LPA
         return S_OK;
     }
 
-    // Non-alphabetic printable char with pending input → commit first
+    // Non-alphabetic printable char with pending input → commit + inject char
     if (ctx->HasPendingInput()) {
-        auto* session = new EditSession([ctx](TfEditCookie ec) -> HRESULT {
-            return ctx->CommitComposition(ec);
+        auto* session = new EditSession([ctx, ch](TfEditCookie ec) -> HRESULT {
+            return ctx->CommitAndInsertChar(ec, ch);
         });
         HRESULT hrSession;
         tfContext->RequestEditSession(_clientId, session,
             TF_ES_ASYNCDONTCARE | TF_ES_READWRITE, &hrSession);
         session->Release();
-        // Don't eat: let the actual char (space, _, etc.) pass through
-        *pfEaten = FALSE;
+        *pfEaten = TRUE;  // We handled everything (commit + inject)
         return S_OK;
     }
 

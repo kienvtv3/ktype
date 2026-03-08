@@ -80,6 +80,20 @@ HRESULT Context::CommitComposition(TfEditCookie ec) {
     return hr;
 }
 
+HRESULT Context::CommitAndInsertChar(TfEditCookie ec, wchar_t ch) {
+    HRESULT hr = CommitComposition(ec);
+    if (FAILED(hr)) return hr;
+
+    ATL::CComPtr<ITfInsertAtSelection> insertAtSel;
+    hr = _tfContext->QueryInterface(&insertAtSel);
+    if (FAILED(hr)) return hr;
+
+    wchar_t buf[2] = { ch, 0 };
+    ATL::CComPtr<ITfRange> range;
+    hr = insertAtSel->InsertTextAtSelection(ec, 0, buf, 1, &range);
+    return hr;
+}
+
 HRESULT Context::CancelComposition(TfEditCookie ec) {
     if (!HasPendingInput()) return S_OK;
 

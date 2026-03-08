@@ -21,6 +21,7 @@ public:
     HRESULT ProcessKey(TfEditCookie ec, wchar_t ch);
     HRESULT ProcessBackspace(TfEditCookie ec);
     HRESULT CommitComposition(TfEditCookie ec);
+    HRESULT CommitAndInsertChar(TfEditCookie ec, wchar_t ch);
     HRESULT CancelComposition(TfEditCookie ec);
 
     bool IsComposing() const { return _composition != nullptr; }
