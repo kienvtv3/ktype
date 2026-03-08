@@ -24,6 +24,9 @@ bool test_w_standalone() { ASSERT_WSTR_EQ(commit("w"), L"\x01b0"); return true; 
 // W undo (toggle)
 bool test_w_undo() { ASSERT_WSTR_EQ(commit("oww"), L"o"); return true; }
 
+// Leading W undo: ww → raw "w" (not "u")
+bool test_ww_raw() { ASSERT_WSTR_EQ(commit("ww"), L"w"); return true; }
+
 // oa, ua W transitions
 bool test_oaw() { ASSERT_WSTR_EQ(commit("oaw"), L"oaw"); return true; }      // oă requires C2 → invalid bare
 
@@ -41,6 +44,7 @@ void run_vowel_tests() {
     RUN_TEST(test_uwow);
     RUN_TEST(test_w_standalone);
     RUN_TEST(test_w_undo);
+    RUN_TEST(test_ww_raw);
     RUN_TEST(test_oaw);
     printf("\n");
 }

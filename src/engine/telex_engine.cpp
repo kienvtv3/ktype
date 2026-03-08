@@ -30,6 +30,7 @@ void TelexEngine::Reset() {
     _cases.clear();
     _hasD = false;
     _hasW = false;
+    _leadingW = false;
     _result.clear();
     _vConsumedKeys = 0;
 }
@@ -276,6 +277,7 @@ bool TelexEngine::TryAddW(wchar_t /*c*/) {
         if (_c1.empty()) {
             _v = L"\x01b0"; // u-horn
             _hasW = true;
+            _leadingW = true;
             return true;
         }
         return false;  // nw, tw etc. → invalid in default Telex
@@ -306,8 +308,17 @@ bool TelexEngine::TryAddW(wchar_t /*c*/) {
     }
 
     // 3. Undo W (check against the same tables used for forward)
+    //    Leading W (standalone w→ư): pop duplicate + invalidate (like tone undo)
+    //    Regular W (ow→ơ): reverse to base vowel
     for (auto it = wBegin; it != wEnd; ++it) {
         if (_v == it->to && it->from != it->to) {  // skip self-transitions
+            if (_leadingW) {
+                // Leading W undo: "ww" → raw "w" (no base vowel to revert to)
+                _keyBuffer.pop_back();
+                _cases.pop_back();
+                _state = TelexStates::Invalid;
+                return true;
+            }
             _v = it->from;
             _hasW = false;
             return true;
@@ -534,6 +545,7 @@ void TelexEngine::Replay() {
     _cases.clear();
     _hasD = false;
     _hasW = false;
+    _leadingW = false;
     _result.clear();
     _vConsumedKeys = 0;
 

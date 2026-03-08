@@ -84,6 +84,7 @@ private:
     std::vector<int> _cases; // 1=upper, 0=lower per output char
     bool _hasD = false;      // whether đ was typed (dd)
     bool _hasW = false;      // whether W was used for vowel transformation
+    bool _leadingW = false;  // whether ư came from standalone W (no base vowel)
     int _vConsumedKeys = 0;  // extra input keys consumed by vowel transitions
     std::wstring _result;    // stored result after Commit
 };
