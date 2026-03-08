@@ -50,6 +50,10 @@ Filename: "powershell.exe"; \
   Flags: runhidden waituntilterminated; \
   StatusMsg: "Configuring keyboard layout..."
 
+[UninstallDelete]
+; Force-remove app directory in case DLL was locked during uninstall
+Type: filesandordirs; Name: "{app}"
+
 [Code]
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
@@ -57,12 +61,9 @@ var
 begin
   if CurUninstallStep = usUninstall then
   begin
-    // Step 1: Remove KType from language list, restore Vietnamese Telex
+    // Remove KType from language list, restore Vietnamese Telex
     Exec('powershell.exe',
          '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\cleanup-keyboard.ps1') + '"',
-         '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    // Step 2: Unregister the COM server
-    Exec('regsvr32.exe', '/u /s "' + ExpandConstant('{app}\KType.dll') + '"',
          '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 end;
