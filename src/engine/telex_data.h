@@ -93,6 +93,7 @@ inline const WTransition WTransitions[] = {
     { L"uou",  L"\x01b0\x01a1u" },               // uou -> u-horn o-horn u
     { L"uu",   L"\x01b0u" },                     // uu -> u-horn u
     { L"\x01b0o", L"\x01b0\x01a1" },             // u-horn o -> u-horn o-horn
+    { L"\x01b0\x01a1", L"\x01b0\x01a1" },       // u-horn o-horn -> self (prevent double-w undo)
 };
 
 // WA transitions (breve: aw -> a-breve). Tried when W transitions fail.
@@ -107,6 +108,12 @@ inline const WTransition WTransitionsQ[] = {
     { L"u",    L"\x01b0" },                      // u → u-horn
     { L"uo",   L"u\x01a1" },                     // uo → u o-horn
     { L"uoi",  L"u\x01a1i" },                    // uoi → u o-horn i
+};
+
+// WA transitions after "qu" (VietType: transitions_wa_q)
+// Note: after "qu", 'u' is in C1, so _v starts with 'a' not 'ua'
+inline const WTransition WATransitionsQ[] = {
+    { L"a",    L"\x0103" },                       // a → a-breve
 };
 
 // Vowel adjustments triggered when C2 is typed (VietType: transitions_wv_c2)
@@ -151,8 +158,8 @@ inline const VowelInfo ValidVowels[] = {
     { L"i",    0, false, false },
     { L"o",    0, false, false },
     { L"u",    0, false, false },
-    { L"y",    0, false, false },
-    { L"\x0103", 0, false, false },  // a-breve
+    { L"y",    0, false, true  },  // y: forbids C2 (VietType)
+    { L"\x0103", 0, true, false },   // a-breve: requires C2
     { L"\x00e2", 0, false, false },  // a-circumflex
     { L"\x00ea", 0, false, false },  // e-circumflex
     { L"\x00f4", 0, false, false },  // o-circumflex
@@ -160,7 +167,7 @@ inline const VowelInfo ValidVowels[] = {
     { L"\x01b0", 0, false, false },  // u-horn
 
     // Two-vowel combinations
-    { L"oo",   0, false, false },   // double-o (reverse of oo→ô, e.g., "xoong")
+    { L"oo",   0, true, false },    // double-o: requires C2 (VietType)
     { L"ai",   0, false, true  },
     { L"ao",   0, false, true  },
     { L"au",   0, false, true  },
@@ -183,7 +190,7 @@ inline const VowelInfo ValidVowels[] = {
     { L"\x01b0\x01a1", 1, true, false },  // u-horn o-horn: requires C2
     { L"\x01b0i", 0, false, true  },     // u-horn i
     { L"\x01b0u", 0, false, true  },     // u-horn u
-    { L"\x01b0" L"a", 0, false, false }, // u-horn a
+    { L"\x01b0" L"a", 0, false, true  }, // u-horn a: forbids C2 (VietType)
 
     // i + e-circumflex combination
     { L"i\x00ea", 1, true, false },  // ie-circumflex: requires C2
@@ -196,8 +203,8 @@ inline const VowelInfo ValidVowels[] = {
     { L"u\x00ea", 1, false, false },
 
     // Three-vowel combinations
-    { L"o\x0103", 1, false, false },  // o a-breve
-    { L"u\x0103", 1, false, false },  // u a-breve
+    { L"o\x0103", 1, true, false },   // o a-breve: requires C2 (VietType)
+    { L"u\x0103", 1, true, false },   // u a-breve: requires C2 (VietType)
     { L"oai",  1, false, true  },
     { L"oay",  1, false, true  },
     { L"u\x00e2", 1, true, false },   // u a-circumflex: requires C2

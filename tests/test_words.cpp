@@ -34,12 +34,22 @@ bool test_toon()   { ASSERT_WSTR_EQ(commit("tono"), L"t\x00f4n"); return true; }
 // Reverse circumflex: oo→ô, then ô+o→oo
 bool test_xoong()  { ASSERT_WSTR_EQ(commit("xoong"), L"x\x00f4ng"); return true; }    // xoong → xông (oo→ô, ng)
 bool test_xooong() { ASSERT_WSTR_EQ(commit("xooong"), L"xoong"); return true; }        // xooong → xoong (oo→ô, ô+o→oo, ng)
-// Restricted W after "qu" — no breve
-bool test_quaw() { ASSERT_WSTR_EQ(commit("quaw"), L"quaw"); return true; }  // qu+a+w → invalid (no breve after qu)
+// WA after "qu" — quaw needs C2 to be valid
+bool test_quaw()  { ASSERT_WSTR_EQ(commit("quaw"), L"quaw"); return true; }   // quă bare → invalid (MustC2)
+bool test_quawt() { ASSERT_WSTR_EQ(commit("quawt"), L"qu\x0103t"); return true; }  // quăt → valid
 
 // Vowel adjustments on C2 (transitions_wv_c2)
 bool test_uwat()  { ASSERT_WSTR_EQ(commit("uwat"), L"u\x0103t"); return true; }                    // ưa+t → uăt (horn→breve)
 bool test_uwon()  { ASSERT_WSTR_EQ(commit("uwon"), L"\x01b0\x01a1n"); return true; }               // ưo+n → ươn
+
+// Tone same-key invalidates
+bool test_tone_invalidate() { ASSERT_WSTR_EQ(commit("aff"), L"aff"); return true; }  // same tone twice → invalid
+
+// Teencode exception: đ bypasses restricted C2 tone check
+bool test_teencode() { ASSERT_WSTR_EQ(commit("ddejk"), L"\x0111\x1eb9k"); return true; }  // đẹk → valid (d-bar exemption)
+
+// Leading W requires empty C1
+bool test_nw_invalid() { ASSERT_WSTR_EQ(commit("nw"), L"nw"); return true; }  // nw → invalid (no LeadingW in default Telex)
 
 void run_word_tests() {
     printf("Word tests:\n");
@@ -72,7 +82,11 @@ void run_word_tests() {
     RUN_TEST(test_xoong);
     RUN_TEST(test_xooong);
     RUN_TEST(test_quaw);
+    RUN_TEST(test_quawt);
     RUN_TEST(test_uwat);
     RUN_TEST(test_uwon);
+    RUN_TEST(test_tone_invalidate);
+    RUN_TEST(test_teencode);
+    RUN_TEST(test_nw_invalid);
     printf("\n");
 }

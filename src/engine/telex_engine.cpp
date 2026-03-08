@@ -28,6 +28,7 @@ void TelexEngine::Reset() {
     _t = Tones::Z;
     _cases.clear();
     _hasD = false;
+    _hasW = false;
     _result.clear();
     _vConsumedKeys = 0;
 }
@@ -233,11 +234,13 @@ bool TelexEngine::TryAddC2(wchar_t c) {
     std::wstring candidate = _c2 + c;
 
     if (TelexData::ValidC2.count(candidate)) {
-        // Apply vowel adjustments for C2 context
-        for (const auto& t : TelexData::WvC2Transitions) {
-            if (_v == t.from) {
-                _v = t.to;
-                break;
+        // Apply vowel adjustments for C2 context (only if W was used)
+        if (_hasW) {
+            for (const auto& t : TelexData::WvC2Transitions) {
+                if (_v == t.from) {
+                    _v = t.to;
+                    break;
+                }
             }
         }
         _c2 = candidate;
@@ -252,19 +255,24 @@ bool TelexEngine::TryAddTone(wchar_t c) {
 
     Tones newTone = TelexData::GetTone(c);
 
-    // If same tone pressed again, undo it (toggle)
+    // Same tone pressed again → invalidate (VietType behavior)
     if (_t == newTone && newTone != Tones::Z) {
-        _t = Tones::Z;
-    } else {
-        _t = newTone;
+        return false;  // goes Invalid
     }
+
+    _t = newTone;
     return true;
 }
 
 bool TelexEngine::TryAddW(wchar_t /*c*/) {
+    // Leading W (empty vowel): only when C1 is also empty (default Telex has no LeadingW)
     if (_v.empty()) {
-        _v = L"\x01b0"; // u-horn
-        return true;
+        if (_c1.empty()) {
+            _v = L"\x01b0"; // u-horn
+            _hasW = true;
+            return true;
+        }
+        return false;  // nw, tw etc. → invalid in default Telex
     }
 
     bool isQu = (_c1 == L"qu");
@@ -275,33 +283,35 @@ bool TelexEngine::TryAddW(wchar_t /*c*/) {
     for (auto it = wBegin; it != wEnd; ++it) {
         if (_v == it->from) {
             _v = it->to;
+            _hasW = true;
             return true;
         }
     }
 
-    // 2. Try WA transitions (only if NOT "qu")
-    if (!isQu) {
-        for (const auto& wt : TelexData::WATransitions) {
-            if (_v == wt.from) {
-                _v = wt.to;
-                return true;
-            }
+    // 2. Try WA transitions (restricted set for "qu", full for others)
+    const auto* waBegin = isQu ? std::begin(TelexData::WATransitionsQ) : std::begin(TelexData::WATransitions);
+    const auto* waEnd = isQu ? std::end(TelexData::WATransitionsQ) : std::end(TelexData::WATransitions);
+    for (auto it = waBegin; it != waEnd; ++it) {
+        if (_v == it->from) {
+            _v = it->to;
+            _hasW = true;
+            return true;
         }
     }
 
-    // 3. Undo W (check against the same table used for forward)
+    // 3. Undo W (check against the same tables used for forward)
     for (auto it = wBegin; it != wEnd; ++it) {
+        if (_v == it->to && it->from != it->to) {  // skip self-transitions
+            _v = it->from;
+            _hasW = false;
+            return true;
+        }
+    }
+    for (auto it = waBegin; it != waEnd; ++it) {
         if (_v == it->to) {
             _v = it->from;
+            _hasW = false;
             return true;
-        }
-    }
-    if (!isQu) {
-        for (const auto& wt : TelexData::WATransitions) {
-            if (_v == wt.to) {
-                _v = wt.from;
-                return true;
-            }
         }
     }
 
@@ -447,7 +457,8 @@ TelexStates TelexEngine::Commit() {
     }
 
     // Check tone restriction: restricted C2 only allows S or J tones
-    if (!_c2.empty() && TelexData::RestrictedC2.count(_c2)) {
+    // Exception: d-bar (đ) onset bypasses this check (teencode, VietType behavior)
+    if (!_c2.empty() && TelexData::RestrictedC2.count(_c2) && _c1 != L"\x0111") {
         if (_t != Tones::Z && _t != Tones::S && _t != Tones::J) {
             _result = _keyBuffer;
             _state = TelexStates::CommittedInvalid;
@@ -500,6 +511,7 @@ void TelexEngine::Replay() {
     _t = Tones::Z;
     _cases.clear();
     _hasD = false;
+    _hasW = false;
     _result.clear();
     _vConsumedKeys = 0;
 

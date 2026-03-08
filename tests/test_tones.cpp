@@ -15,15 +15,15 @@ bool test_tone_u() { ASSERT_WSTR_EQ(commit("us"), L"\x00fa"); return true; }  //
 bool test_tone_y() { ASSERT_WSTR_EQ(commit("ys"), L"\x00fd"); return true; }  // ý
 
 // Tones on modified vowels
-bool test_tone_aw() { ASSERT_WSTR_EQ(commit("aws"), L"\x1eaf"); return true; }  // ắ
+bool test_tone_aw() { ASSERT_WSTR_EQ(commit("awns"), L"\x1eafn"); return true; }  // ắn (ă requires C2)
 bool test_tone_aa() { ASSERT_WSTR_EQ(commit("aas"), L"\x1ea5"); return true; }  // ấ
 bool test_tone_ee() { ASSERT_WSTR_EQ(commit("ees"), L"\x1ebf"); return true; }  // ế
 bool test_tone_oo() { ASSERT_WSTR_EQ(commit("oos"), L"\x1ed1"); return true; }  // ố
 bool test_tone_ow() { ASSERT_WSTR_EQ(commit("ows"), L"\x1edb"); return true; }  // ớ
 bool test_tone_uw() { ASSERT_WSTR_EQ(commit("uws"), L"\x1ee9"); return true; }  // ứ
 
-// Tone toggle (same tone twice removes it)
-bool test_tone_toggle() { ASSERT_WSTR_EQ(commit("ass"), L"a"); return true; }
+// Tone double-press: same tone twice → invalidate (VietType behavior)
+bool test_tone_toggle() { ASSERT_WSTR_EQ(commit("ass"), L"ass"); return true; }
 
 // Tone replacement (different tone replaces)
 bool test_tone_replace() { ASSERT_WSTR_EQ(commit("asf"), L"\x00e0"); return true; }  // à

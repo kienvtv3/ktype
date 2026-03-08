@@ -6,7 +6,7 @@ bool test_ee() { ASSERT_WSTR_EQ(commit("ee"), L"\x00ea"); return true; }   // ê
 bool test_oo() { ASSERT_WSTR_EQ(commit("oo"), L"\x00f4"); return true; }   // ô
 
 // W transitions
-bool test_aw() { ASSERT_WSTR_EQ(commit("aw"), L"\x0103"); return true; }   // ă
+bool test_aw() { ASSERT_WSTR_EQ(commit("aw"), L"aw"); return true; }       // ă requires C2 → invalid bare
 bool test_ow() { ASSERT_WSTR_EQ(commit("ow"), L"\x01a1"); return true; }   // ơ
 bool test_uw() { ASSERT_WSTR_EQ(commit("uw"), L"\x01b0"); return true; }   // ư
 
@@ -25,7 +25,7 @@ bool test_w_standalone() { ASSERT_WSTR_EQ(commit("w"), L"\x01b0"); return true; 
 bool test_w_undo() { ASSERT_WSTR_EQ(commit("oww"), L"o"); return true; }
 
 // oa, ua W transitions
-bool test_oaw() { ASSERT_WSTR_EQ(commit("oaw"), L"o\x0103"); return true; }  // oă
+bool test_oaw() { ASSERT_WSTR_EQ(commit("oaw"), L"oaw"); return true; }      // oă requires C2 → invalid bare
 
 void run_vowel_tests() {
     printf("Vowel tests:\n");
