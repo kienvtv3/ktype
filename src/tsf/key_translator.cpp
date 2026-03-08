@@ -4,12 +4,25 @@
 
 namespace KType {
 
+// Cache US English keyboard layout for ToUnicodeEx
+// The Vietnamese keyboard layout maps number keys to diacritics (ă â ê ô + tones).
+// KType does all Vietnamese processing itself, so we always use US layout underneath.
+static HKL GetUSKeyboardLayout() {
+    static HKL s_hkl = LoadKeyboardLayoutW(L"00000409", KLF_NOTELLSHELL);
+    return s_hkl;
+}
+
 wchar_t KeyTranslator::VkToChar(WPARAM vk, LPARAM lParam, const BYTE* keyState, bool noChangeState) {
     wchar_t buf[4] = {};
     UINT scanCode = (UINT)((lParam >> 16) & 0xFF);
     // Flag 4: don't change internal keyboard state (avoids dead key issues with double ToUnicode calls)
     UINT flags = noChangeState ? 4 : 0;
-    int result = ToUnicode((UINT)vk, scanCode, keyState, buf, 4, flags);
+
+    // Use US keyboard layout to avoid Vietnamese layout mapping numbers to diacritics
+    HKL hkl = GetUSKeyboardLayout();
+    int result = hkl
+        ? ToUnicodeEx((UINT)vk, scanCode, keyState, buf, 4, flags, hkl)
+        : ToUnicode((UINT)vk, scanCode, keyState, buf, 4, flags);
     if (result == 1) {
         return buf[0];
     }
