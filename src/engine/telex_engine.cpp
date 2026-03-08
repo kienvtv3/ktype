@@ -586,6 +586,7 @@ std::wstring TelexEngine::Peek() const {
         preview = L"g" + tonedV + _c2;
     }
 
+    ApplyCases(preview);
     return preview;
 }
 

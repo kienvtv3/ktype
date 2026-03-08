@@ -43,11 +43,29 @@ bool test_lower() {
     return true;
 }
 
+// Peek shows uppercase during composition
+bool test_peek_upper() {
+    TelexEngine e;
+    e.PushChar(L'V');
+    push(e, "iee");
+    ASSERT_WSTR_EQ(e.Peek(), L"Vi\x00ea");  // Viê (uppercase V preserved in preview)
+    return true;
+}
+
+bool test_peek_all_upper() {
+    TelexEngine e;
+    e.PushChar(L'V'); e.PushChar(L'I'); e.PushChar(L'E'); e.PushChar(L'E');
+    ASSERT_WSTR_EQ(e.Peek(), L"VI\x00ca");  // VIÊ (all uppercase in preview)
+    return true;
+}
+
 void run_case_tests() {
     printf("Case tests:\n");
     RUN_TEST(test_upper_first);
     RUN_TEST(test_all_upper);
     RUN_TEST(test_upper_dd);
     RUN_TEST(test_lower);
+    RUN_TEST(test_peek_upper);
+    RUN_TEST(test_peek_all_upper);
     printf("\n");
 }
