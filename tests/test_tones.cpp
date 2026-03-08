@@ -22,8 +22,15 @@ bool test_tone_oo() { ASSERT_WSTR_EQ(commit("oos"), L"\x1ed1"); return true; }  
 bool test_tone_ow() { ASSERT_WSTR_EQ(commit("ows"), L"\x1edb"); return true; }  // ớ
 bool test_tone_uw() { ASSERT_WSTR_EQ(commit("uws"), L"\x1ee9"); return true; }  // ứ
 
-// Tone double-press: same tone twice → invalidate (VietType behavior)
-bool test_tone_toggle() { ASSERT_WSTR_EQ(commit("ass"), L"ass"); return true; }
+// Tone double-press: same tone twice → undo + invalidate (VietType behavior)
+// Duplicate char is popped, so "ass" → "as" (not "ass")
+bool test_tone_toggle() { ASSERT_WSTR_EQ(commit("ass"), L"as"); return true; }
+
+// Tone undo then continue typing → raw output
+bool test_tone_undo_continue() { ASSERT_WSTR_EQ(commit("tesst"), L"test"); return true; }
+
+// Tone undo with more chars
+bool test_tone_undo_raw() { ASSERT_WSTR_EQ(commit("tess"), L"tes"); return true; }
 
 // Tone replacement (different tone replaces)
 bool test_tone_replace() { ASSERT_WSTR_EQ(commit("asf"), L"\x00e0"); return true; }  // à
@@ -52,6 +59,8 @@ void run_tone_tests() {
     RUN_TEST(test_tone_ow);
     RUN_TEST(test_tone_uw);
     RUN_TEST(test_tone_toggle);
+    RUN_TEST(test_tone_undo_continue);
+    RUN_TEST(test_tone_undo_raw);
     RUN_TEST(test_tone_replace);
     RUN_TEST(test_tone_ai);
     RUN_TEST(test_tone_oi);

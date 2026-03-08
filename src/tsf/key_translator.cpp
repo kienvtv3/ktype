@@ -4,10 +4,12 @@
 
 namespace KType {
 
-wchar_t KeyTranslator::VkToChar(WPARAM vk, LPARAM lParam, const BYTE* keyState) {
+wchar_t KeyTranslator::VkToChar(WPARAM vk, LPARAM lParam, const BYTE* keyState, bool noChangeState) {
     wchar_t buf[4] = {};
     UINT scanCode = (UINT)((lParam >> 16) & 0xFF);
-    int result = ToUnicode((UINT)vk, scanCode, keyState, buf, 4, 0);
+    // Flag 4: don't change internal keyboard state (avoids dead key issues with double ToUnicode calls)
+    UINT flags = noChangeState ? 4 : 0;
+    int result = ToUnicode((UINT)vk, scanCode, keyState, buf, 4, flags);
     if (result == 1) {
         return buf[0];
     }

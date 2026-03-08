@@ -51,8 +51,8 @@ bool test_quawt() { ASSERT_WSTR_EQ(commit("quawt"), L"qu\x0103t"); return true; 
 bool test_uwat()  { ASSERT_WSTR_EQ(commit("uwat"), L"u\x0103t"); return true; }                    // ưa+t → uăt (horn→breve)
 bool test_uwon()  { ASSERT_WSTR_EQ(commit("uwon"), L"\x01b0\x01a1n"); return true; }               // ưo+n → ươn
 
-// Tone same-key invalidates
-bool test_tone_invalidate() { ASSERT_WSTR_EQ(commit("aff"), L"aff"); return true; }  // same tone twice → invalid
+// Tone same-key: undo + pop duplicate (VietType InvalidateAndPopBack)
+bool test_tone_invalidate() { ASSERT_WSTR_EQ(commit("aff"), L"af"); return true; }  // same tone twice → undo, raw "af"
 
 // Teencode exception: đ bypasses restricted C2 tone check
 bool test_teencode() { ASSERT_WSTR_EQ(commit("ddejk"), L"\x0111\x1eb9k"); return true; }  // đẹk → valid (d-bar exemption)

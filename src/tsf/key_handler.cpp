@@ -11,11 +11,16 @@ STDMETHODIMP ContextManager::OnTestKeyDown(ITfContext* tfContext, WPARAM wParam,
     BYTE keyState[256];
     if (!GetKeyboardState(keyState)) return S_OK;
 
-    // Don't eat keys with Ctrl/Alt modifiers
-    if (KeyTranslator::HasModifiers(keyState)) return S_OK;
-
     Context* ctx = GetOrCreateContext(tfContext);
     if (ctx->IsBlocked()) return S_OK;
+
+    // Ctrl/Alt modifiers: commit composition if active, then pass through (VietType behavior)
+    if (KeyTranslator::HasModifiers(keyState)) {
+        if (ctx->HasPendingInput()) {
+            ctx->RequestCommit();
+        }
+        return S_OK;
+    }
 
     // Backspace: eat if we have pending input
     if (wParam == VK_BACK) {
@@ -35,8 +40,8 @@ STDMETHODIMP ContextManager::OnTestKeyDown(ITfContext* tfContext, WPARAM wParam,
         return S_OK;
     }
 
-    // Translate to character
-    wchar_t ch = KeyTranslator::VkToChar(wParam, lParam, keyState);
+    // Translate to character (noChangeState=true to avoid corrupting dead key state)
+    wchar_t ch = KeyTranslator::VkToChar(wParam, lParam, keyState, true);
 
     // Alphabetic keys that the Telex engine accepts
     if (ch && KeyTranslator::IsKeyEaten(ch)) {
@@ -60,6 +65,7 @@ STDMETHODIMP ContextManager::OnKeyDown(ITfContext* tfContext, WPARAM wParam, LPA
     BYTE keyState[256];
     if (!GetKeyboardState(keyState)) return S_OK;
 
+    // Modifiers: composition already committed in OnTestKeyDown, pass through
     if (KeyTranslator::HasModifiers(keyState)) return S_OK;
 
     Context* ctx = GetOrCreateContext(tfContext);

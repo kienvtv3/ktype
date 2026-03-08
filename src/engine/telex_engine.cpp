@@ -256,9 +256,14 @@ bool TelexEngine::TryAddTone(wchar_t c) {
 
     Tones newTone = TelexData::GetTone(c);
 
-    // Same tone pressed again → invalidate (VietType behavior)
+    // Same tone pressed again → undo: pop duplicate, invalidate (VietType behavior)
+    // e.g. "tess" → raw "tes", "tesst" → raw "test"
     if (_t == newTone && newTone != Tones::Z) {
-        return false;  // goes Invalid
+        // Remove the duplicate char that PushChar already added to _keyBuffer
+        _keyBuffer.pop_back();
+        _cases.pop_back();
+        _state = TelexStates::Invalid;
+        return true;  // handled (don't let PushChar double-invalidate)
     }
 
     _t = newTone;

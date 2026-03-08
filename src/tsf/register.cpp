@@ -69,6 +69,11 @@ static HRESULT RegisterProfiles() {
     wchar_t dllPath[MAX_PATH];
     GetModuleFileNameW(Globals::DllInstance, dllPath, MAX_PATH);
 
+    // Use US English keyboard layout underneath KType
+    // Without this, Windows uses the default Vietnamese keyboard layout which
+    // maps number keys to diacritics (ă â ê ô + tone marks) instead of digits.
+    HKL usKeyboard = (HKL)(ULONG_PTR)0x04090409;
+
     hr = profileMgr->RegisterProfile(
         Globals::CLSID_TextService,
         Globals::TextServiceLangId,
@@ -78,7 +83,7 @@ static HRESULT RegisterProfiles() {
         dllPath,
         (ULONG)wcslen(dllPath),
         (ULONG)(-IDI_KTYPE),  // icon resource ID (negative = resource ID)
-        NULL,  // hkl substitute
+        usKeyboard,            // US keyboard as substitute layout
         0,     // preferred layout
         TRUE,  // enable by default
         0);    // flags
