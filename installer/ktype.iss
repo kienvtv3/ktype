@@ -26,7 +26,6 @@ PrivilegesRequired=admin
 UninstallDisplayName={#MyAppName}
 UninstallDisplayIcon={app}\KType.dll
 WizardStyle=modern
-; Override previous installation without asking
 UsePreviousAppDir=yes
 
 [Languages]
@@ -36,6 +35,13 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Source: "..\build\x64\Release\KType.dll"; DestDir: "{app}"; Flags: ignoreversion regserver
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
+
+[Run]
+; After DLL registration, remove the default Vietnamese keyboard that Windows auto-adds
+Filename: "powershell.exe"; \
+  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$l = Get-WinUserLanguageList; foreach ($lang in $l) {{ if ($lang.LanguageTag -like 'vi*') {{ $remove = @(); foreach ($tip in $lang.InputMethodTips) {{ if ($tip -like '042A:0000042A*') {{ $remove += $tip }} }}; foreach ($t in $remove) {{ $lang.InputMethodTips.Remove($t) | Out-Null }} }} }}; Set-WinUserLanguageList $l -Force"""; \
+  Flags: runhidden waituntilterminated; \
+  StatusMsg: "Configuring keyboard layout..."
 
 [Code]
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
