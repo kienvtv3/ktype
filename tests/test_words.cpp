@@ -27,6 +27,9 @@ bool test_viet2()  { ASSERT_WSTR_EQ(commit("vieest"), L"vi\x1ebft"); return true
 bool test_nua()    { ASSERT_WSTR_EQ(commit("nuawx"), L"n\x1eef" L"a"); return true; }                // nữa
 bool test_muon()   { ASSERT_WSTR_EQ(commit("muoons"), L"mu\x1ed1n"); return true; }                  // muốn
 
+// Vowel transition after C2 (free doubling)
+bool test_nen()    { ASSERT_WSTR_EQ(commit("nene"), L"n\x00ean"); return true; }                    // nên (nene)
+bool test_toon()   { ASSERT_WSTR_EQ(commit("tono"), L"t\x00f4n"); return true; }                    // tôn (tono)
 void run_word_tests() {
     printf("Word tests:\n");
     RUN_TEST(test_viet);
@@ -53,5 +56,7 @@ void run_word_tests() {
     RUN_TEST(test_viet2);
     RUN_TEST(test_nua);
     RUN_TEST(test_muon);
+    RUN_TEST(test_nen);
+    RUN_TEST(test_toon);
     printf("\n");
 }

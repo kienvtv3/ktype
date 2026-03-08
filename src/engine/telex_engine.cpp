@@ -98,11 +98,6 @@ TelexStates TelexEngine::PushChar(wchar_t c) {
             handled = true;
             break;
         }
-        // If we already have C2, this is invalid
-        if (!_c2.empty()) {
-            _state = TelexStates::Invalid;
-            return _state;
-        }
         handled = TryAddVowel(lc);
         break;
     case CharType::ToneMark:
@@ -170,6 +165,7 @@ bool TelexEngine::TryAddVowel(wchar_t c) {
     std::wstring candidate = _v + c;
 
     // 1. Check if candidate matches a vowel transition (apply it)
+    //    Transitions are allowed even after C2 (e.g., "nene" → n+e+n+e → "ee"→"ê" → "nên")
     for (const auto& t : TelexData::VowelTransitions) {
         if (t.from == candidate) {
             _vConsumedKeys += (int)(candidate.size() - t.to.size());
@@ -178,7 +174,12 @@ bool TelexEngine::TryAddVowel(wchar_t c) {
         }
     }
 
-    // 2. Check if candidate is a prefix of a transition (keep accumulating)
+    // 2. If C2 is already present and no transition matched, reject
+    if (!_c2.empty()) {
+        return false;
+    }
+
+    // 3. Check if candidate is a prefix of a transition (keep accumulating)
     for (const auto& t : TelexData::VowelTransitions) {
         if (t.from.size() > candidate.size() &&
             t.from.substr(0, candidate.size()) == candidate) {
@@ -187,13 +188,13 @@ bool TelexEngine::TryAddVowel(wchar_t c) {
         }
     }
 
-    // 3. Check if candidate is a valid vowel
+    // 4. Check if candidate is a valid vowel
     if (VowelMap().count(candidate)) {
         _v = candidate;
         return true;
     }
 
-    // 4. Check if candidate is a prefix of a valid vowel
+    // 5. Check if candidate is a prefix of a valid vowel
     for (const auto& vi : TelexData::ValidVowels) {
         if (vi.vowel.size() > candidate.size() &&
             vi.vowel.substr(0, candidate.size()) == candidate) {
@@ -202,7 +203,7 @@ bool TelexEngine::TryAddVowel(wchar_t c) {
         }
     }
 
-    // 5. Check if candidate can be W-transformed into something valid
+    // 6. Check if candidate can be W-transformed into something valid
     for (const auto& wt : TelexData::WTransitions) {
         if (wt.from == candidate) {
             _v = candidate;
