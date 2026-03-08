@@ -93,6 +93,9 @@ bool test_ai_with_c2() { ASSERT_WSTR_EQ(commit("ain"), L"ain"); return true; }  
 bool test_uo_no_c2()   { ASSERT_WSTR_EQ(commit("uoo"), L"uoo"); return true; }          // uô alone → invalid
 bool test_uo_with_c2() { ASSERT_WSTR_EQ(commit("uoong"), L"u\x00f4ng"); return true; }  // uông → valid
 
+// Max word length: >10 chars → invalid (raw)
+bool test_max_length() { ASSERT_WSTR_EQ(commit("abcdefghijk"), L"abcdefghijk"); return true; }
+
 // gi handling: gi is C1, vowel after gi works normally
 bool test_gi_a() {
     ASSERT_WSTR_EQ(commit("gia"), L"gia");
@@ -123,5 +126,6 @@ void run_edge_case_tests() {
     RUN_TEST(test_uo_with_c2);
     RUN_TEST(test_gi_a);
     RUN_TEST(test_gi_tone);
+    RUN_TEST(test_max_length);
     printf("\n");
 }

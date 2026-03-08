@@ -62,6 +62,11 @@ TelexStates TelexEngine::PushChar(wchar_t c) {
         return _state;
     }
 
+    // Max syllable length (VietType: MaxLength = 10)
+    if (_state == TelexStates::Valid && _keyBuffer.size() >= 10) {
+        _state = TelexStates::Invalid;
+    }
+
     _keyBuffer += c;
     _cases.push_back(iswupper(c) ? 1 : 0);
 
