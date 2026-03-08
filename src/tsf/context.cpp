@@ -81,16 +81,24 @@ HRESULT Context::CommitComposition(TfEditCookie ec) {
 }
 
 HRESULT Context::CommitAndInsertChar(TfEditCookie ec, wchar_t ch) {
-    HRESULT hr = CommitComposition(ec);
-    if (FAILED(hr)) return hr;
+    if (!HasPendingInput()) {
+        // No composition — just insert the char directly
+        ATL::CComPtr<ITfInsertAtSelection> insertAtSel;
+        HRESULT hr = _tfContext->QueryInterface(&insertAtSel);
+        if (FAILED(hr)) return hr;
+        wchar_t buf[2] = { ch, 0 };
+        ATL::CComPtr<ITfRange> range;
+        return insertAtSel->InsertTextAtSelection(ec, 0, buf, 1, &range);
+    }
 
-    ATL::CComPtr<ITfInsertAtSelection> insertAtSel;
-    hr = _tfContext->QueryInterface(&insertAtSel);
-    if (FAILED(hr)) return hr;
+    // Commit engine and append the triggering char to the result
+    // This avoids a two-step commit-then-insert which has selection state issues
+    _engine.Commit();
+    std::wstring result = _engine.Retrieve();
+    result += ch;
 
-    wchar_t buf[2] = { ch, 0 };
-    ATL::CComPtr<ITfRange> range;
-    hr = insertAtSel->InsertTextAtSelection(ec, 0, buf, 1, &range);
+    HRESULT hr = IsComposing() ? EndComposition(ec, result) : S_OK;
+    _engine.Reset();
     return hr;
 }
 
