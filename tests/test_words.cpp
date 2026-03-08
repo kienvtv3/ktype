@@ -30,6 +30,10 @@ bool test_muon()   { ASSERT_WSTR_EQ(commit("muoons"), L"mu\x1ed1n"); return true
 // Vowel transition after C2 (free doubling)
 bool test_nen()    { ASSERT_WSTR_EQ(commit("nene"), L"n\x00ean"); return true; }                    // nên (nene)
 bool test_toon()   { ASSERT_WSTR_EQ(commit("tono"), L"t\x00f4n"); return true; }                    // tôn (tono)
+
+// Reverse circumflex: oo→ô, then ô+o→oo
+bool test_xoong()  { ASSERT_WSTR_EQ(commit("xoong"), L"x\x00f4ng"); return true; }    // xoong → xông (oo→ô, ng)
+bool test_xooong() { ASSERT_WSTR_EQ(commit("xooong"), L"xoong"); return true; }        // xooong → xoong (oo→ô, ô+o→oo, ng)
 void run_word_tests() {
     printf("Word tests:\n");
     RUN_TEST(test_viet);
@@ -58,5 +62,7 @@ void run_word_tests() {
     RUN_TEST(test_muon);
     RUN_TEST(test_nen);
     RUN_TEST(test_toon);
+    RUN_TEST(test_xoong);
+    RUN_TEST(test_xooong);
     printf("\n");
 }

@@ -71,6 +71,12 @@ inline const VTransition VowelTransitions[] = {
     { L"uoio",  L"u\x00f4i" },      // uoi+o -> uo^i
     { L"ieue",  L"i\x00eau" },      // ieu+e -> ie^u
     { L"yeue",  L"y\x00eau" },      // yeu+e -> ye^u
+
+    // Reverse: ô+o → oo (undo circumflex, for "xooong" → "xoong")
+    { L"\x00f4o", L"oo" },
+
+    // Relaxed: ư+o → ươ (horn already on u via W, typing 'o' adds horn to o too)
+    { L"\x01b0o", L"\x01b0\x01a1" },
 };
 
 // W-key transitions (horn: adds hook to o/u)
@@ -142,6 +148,7 @@ inline const VowelInfo ValidVowels[] = {
     { L"\x01b0", 0, false, false },  // u-horn
 
     // Two-vowel combinations
+    { L"oo",   0, false, false },   // double-o (reverse of oo→ô, e.g., "xoong")
     { L"ai",   0, false, true  },
     { L"ao",   0, false, true  },
     { L"au",   0, false, true  },
