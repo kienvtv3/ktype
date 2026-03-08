@@ -53,5 +53,9 @@ begin
     // Unregister the COM server before removing files
     Exec('regsvr32.exe', '/u /s "' + ExpandConstant('{app}\KType.dll') + '"',
          '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    // Remove the default Vietnamese keyboard that Windows auto-adds after unregister
+    Exec('powershell.exe',
+         '-NoProfile -ExecutionPolicy Bypass -Command "$l = Get-WinUserLanguageList; foreach ($lang in $l) { if ($lang.LanguageTag -like ''vi*'') { $remove = @(); foreach ($tip in $lang.InputMethodTips) { if ($tip -like ''042A:0000042A*'') { $remove += $tip } }; foreach ($t in $remove) { $lang.InputMethodTips.Remove($t) | Out-Null } } }; Set-WinUserLanguageList $l -Force"',
+         '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
   end;
 end;

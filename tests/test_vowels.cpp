@@ -10,10 +10,10 @@ bool test_aw() { ASSERT_WSTR_EQ(commit("aw"), L"\x0103"); return true; }   // ă
 bool test_ow() { ASSERT_WSTR_EQ(commit("ow"), L"\x01a1"); return true; }   // ơ
 bool test_uw() { ASSERT_WSTR_EQ(commit("uw"), L"\x01b0"); return true; }   // ư
 
-// Di-vowel transitions
-bool test_ie() { ASSERT_WSTR_EQ(commit("ie"), L"i\x00ea"); return true; }   // iê
-bool test_ye() { ASSERT_WSTR_EQ(commit("ye"), L"y\x00ea"); return true; }   // yê
-bool test_uo() { ASSERT_WSTR_EQ(commit("uo"), L"u\x00f4"); return true; }   // uô
+// Di-vowel transitions (doubling triggers circumflex)
+bool test_ie() { ASSERT_WSTR_EQ(commit("iee"), L"i\x00ea"); return true; }   // iê (iee)
+bool test_ye() { ASSERT_WSTR_EQ(commit("yee"), L"y\x00ea"); return true; }   // yê (yee)
+bool test_uo() { ASSERT_WSTR_EQ(commit("uoo"), L"u\x00f4"); return true; }   // uô (uoo)
 
 // ươ via uw + ow
 bool test_uwow() { ASSERT_WSTR_EQ(commit("uwow"), L"\x01b0\x01a1"); return true; }  // ươ

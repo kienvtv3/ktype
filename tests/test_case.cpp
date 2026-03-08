@@ -4,7 +4,7 @@
 bool test_upper_first() {
     TelexEngine e;
     e.PushChar(L'V');
-    push(e, "iejt");
+    push(e, "ieejt");
     e.Commit();
     ASSERT_WSTR_EQ(e.Retrieve(), L"Vi\x1ec7t");
     return true;
@@ -15,6 +15,7 @@ bool test_all_upper() {
     TelexEngine e;
     e.PushChar(L'V');
     e.PushChar(L'I');
+    e.PushChar(L'E');
     e.PushChar(L'E');
     e.PushChar(L'J');
     e.PushChar(L'T');
@@ -41,7 +42,7 @@ bool test_upper_dd() {
 
 // All lowercase
 bool test_lower() {
-    ASSERT_WSTR_EQ(commit("viejt"), L"vi\x1ec7t");
+    ASSERT_WSTR_EQ(commit("vieejt"), L"vi\x1ec7t");
     return true;
 }
 

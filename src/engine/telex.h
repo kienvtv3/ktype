@@ -81,6 +81,7 @@ private:
     Tones _t = Tones::Z;
     std::vector<int> _cases; // 1=upper, 0=lower per output char
     bool _hasD = false;      // whether đ was typed (dd)
+    int _vConsumedKeys = 0;  // extra input keys consumed by vowel transitions
     std::wstring _result;    // stored result after Commit
 };
 

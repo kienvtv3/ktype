@@ -48,8 +48,8 @@ bool test_bs_after_dd() {
 
 bool test_bs_mid_word() {
     TelexEngine e;
-    push(e, "viejt");  // việt
-    e.Backspace();     // remove 't' → việ
+    push(e, "vieejt");  // việt
+    e.Backspace();      // remove 't' → việ
     e.Commit();
     ASSERT_WSTR_EQ(e.Retrieve(), L"vi\x1ec7"); // việ
     return true;

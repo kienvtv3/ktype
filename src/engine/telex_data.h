@@ -10,25 +10,25 @@ namespace KType {
 namespace TelexData {
 
 // Tone table: base vowel -> 6 variants [Z, S, F, R, X, J]
-// Z=no tone, S=sắc, F=huyền, R=hỏi, X=ngã, J=nặng
+// Z=no tone, S=sac, F=huyen, R=hoi, X=nga, J=nang
 struct ToneRow {
     wchar_t base;
     wchar_t toned[6]; // Z, S, F, R, X, J
 };
 
 inline const ToneRow ToneTable[] = {
-    { L'a', { L'a', L'\x00e1', L'\x00e0', L'\x1ea3', L'\x00e3', L'\x1ea1' } },  // a á à ả ã ạ
-    { L'e', { L'e', L'\x00e9', L'\x00e8', L'\x1ebb', L'\x1ebd', L'\x1eb9' } },  // e é è ẻ ẽ ẹ
-    { L'i', { L'i', L'\x00ed', L'\x00ec', L'\x1ec9', L'\x0129', L'\x1ecb' } },  // i í ì ỉ ĩ ị
-    { L'o', { L'o', L'\x00f3', L'\x00f2', L'\x1ecf', L'\x00f5', L'\x1ecd' } },  // o ó ò ỏ õ ọ
-    { L'u', { L'u', L'\x00fa', L'\x00f9', L'\x1ee7', L'\x0169', L'\x1ee5' } },  // u ú ù ủ ũ ụ
-    { L'y', { L'y', L'\x00fd', L'\x1ef3', L'\x1ef7', L'\x1ef9', L'\x1ef5' } },  // y ý ỳ ỷ ỹ ỵ
-    { L'\x0103', { L'\x0103', L'\x1eaf', L'\x1eb1', L'\x1eb3', L'\x1eb5', L'\x1eb7' } },  // ă ắ ằ ẳ ẵ ặ
-    { L'\x00e2', { L'\x00e2', L'\x1ea5', L'\x1ea7', L'\x1ea9', L'\x1eab', L'\x1ead' } },  // â ấ ầ ẩ ẫ ậ
-    { L'\x00ea', { L'\x00ea', L'\x1ebf', L'\x1ec1', L'\x1ec3', L'\x1ec5', L'\x1ec7' } },  // ê ế ề ể ễ ệ
-    { L'\x00f4', { L'\x00f4', L'\x1ed1', L'\x1ed3', L'\x1ed5', L'\x1ed7', L'\x1ed9' } },  // ô ố ồ ổ ỗ ộ
-    { L'\x01a1', { L'\x01a1', L'\x1edb', L'\x1edd', L'\x1edf', L'\x1ee1', L'\x1ee3' } },  // ơ ớ ờ ở ỡ ợ
-    { L'\x01b0', { L'\x01b0', L'\x1ee9', L'\x1eeb', L'\x1eed', L'\x1eef', L'\x1ef1' } },  // ư ứ ừ ử ữ ự
+    { L'a', { L'a', L'\x00e1', L'\x00e0', L'\x1ea3', L'\x00e3', L'\x1ea1' } },  // a
+    { L'e', { L'e', L'\x00e9', L'\x00e8', L'\x1ebb', L'\x1ebd', L'\x1eb9' } },  // e
+    { L'i', { L'i', L'\x00ed', L'\x00ec', L'\x1ec9', L'\x0129', L'\x1ecb' } },  // i
+    { L'o', { L'o', L'\x00f3', L'\x00f2', L'\x1ecf', L'\x00f5', L'\x1ecd' } },  // o
+    { L'u', { L'u', L'\x00fa', L'\x00f9', L'\x1ee7', L'\x0169', L'\x1ee5' } },  // u
+    { L'y', { L'y', L'\x00fd', L'\x1ef3', L'\x1ef7', L'\x1ef9', L'\x1ef5' } },  // y
+    { L'\x0103', { L'\x0103', L'\x1eaf', L'\x1eb1', L'\x1eb3', L'\x1eb5', L'\x1eb7' } },  // a-breve
+    { L'\x00e2', { L'\x00e2', L'\x1ea5', L'\x1ea7', L'\x1ea9', L'\x1eab', L'\x1ead' } },  // a-circumflex
+    { L'\x00ea', { L'\x00ea', L'\x1ebf', L'\x1ec1', L'\x1ec3', L'\x1ec5', L'\x1ec7' } },  // e-circumflex
+    { L'\x00f4', { L'\x00f4', L'\x1ed1', L'\x1ed3', L'\x1ed5', L'\x1ed7', L'\x1ed9' } },  // o-circumflex
+    { L'\x01a1', { L'\x01a1', L'\x1edb', L'\x1edd', L'\x1edf', L'\x1ee1', L'\x1ee3' } },  // o-horn
+    { L'\x01b0', { L'\x01b0', L'\x1ee9', L'\x1eeb', L'\x1eed', L'\x1eef', L'\x1ef1' } },  // u-horn
 };
 
 // Map base vowel char to its ToneTable index
@@ -40,48 +40,63 @@ inline std::unordered_map<wchar_t, int> MakeToneMap() {
     return m;
 }
 
-// W-key transitions: what vowel(s) transform into when w is pressed
-// e.g., "o" → "ơ", "u" → "ư", "a" → "ă"
+// Vowel transitions: maps accumulated _v string to result.
+// VietType-style: NO eager di-vowel transforms. Transitions fire on the
+// doubling key (e.g. "iee" -> "ie^", "uoo" -> "uo^").
+struct VTransition {
+    std::wstring from;
+    std::wstring to;
+};
+
+inline const VTransition VowelTransitions[] = {
+    // Single doubling: aa->a^, ee->e^, oo->o^
+    { L"aa",    L"\x00e2" },
+    { L"ee",    L"\x00ea" },
+    { L"oo",    L"\x00f4" },
+
+    // Delayed di-vowel transitions (the KEY fix)
+    { L"iee",   L"i\x00ea" },        // ie+e -> ie^
+    { L"yee",   L"y\x00ea" },        // ye+e -> ye^
+    { L"uoo",   L"u\x00f4" },        // uo+o -> uo^
+    { L"uee",   L"u\x00ea" },        // ue+e -> ue^
+    { L"uaa",   L"u\x00e2" },        // ua+a -> ua^
+    { L"uyee",  L"uy\x00ea" },       // uye+e -> uye^
+
+    // Alternative input order (doubling after next vowel)
+    { L"aua",   L"\x00e2u" },        // au+a -> a^u
+    { L"aya",   L"\x00e2y" },        // ay+a -> a^y
+    { L"eue",   L"\x00eau" },        // eu+e -> e^u
+    { L"oio",   L"\x00f4i" },        // oi+o -> o^i
+    { L"uaya",  L"u\x00e2y" },      // uay+a -> ua^y
+    { L"uoio",  L"u\x00f4i" },      // uoi+o -> uo^i
+    { L"ieue",  L"i\x00eau" },      // ieu+e -> ie^u
+    { L"yeue",  L"y\x00eau" },      // yeu+e -> ye^u
+};
+
+// W-key transitions (horn: adds hook to o/u)
 struct WTransition {
     std::wstring from;
     std::wstring to;
 };
 
 inline const WTransition WTransitions[] = {
-    { L"o",   L"\x01a1" },                  // o → ơ
-    { L"u",   L"\x01b0" },                  // u → ư
-    { L"a",   L"\x0103" },                  // a → ă
-    { L"uo",  L"\x01b0\x01a1" },            // uo → ươ
-    { L"\x01b0o", L"\x01b0\x01a1" },        // ưo → ươ (when ư already typed via uw)
-    { L"oa",  L"o\x0103" },                 // oa → oă
-    { L"ua",  L"u\x0103" },                 // ua → uă
+    { L"o",    L"\x01a1" },                      // o -> o-horn
+    { L"oi",   L"\x01a1i" },                     // oi -> o-horn i
+    { L"u",    L"\x01b0" },                      // u -> u-horn
+    { L"ua",   L"\x01b0" L"a" },                 // ua -> u-horn a
+    { L"ui",   L"\x01b0i" },                     // ui -> u-horn i
+    { L"uo",   L"\x01b0\x01a1" },                // uo -> u-horn o-horn
+    { L"uoi",  L"\x01b0\x01a1i" },               // uoi -> u-horn o-horn i
+    { L"uou",  L"\x01b0\x01a1u" },               // uou -> u-horn o-horn u
+    { L"uu",   L"\x01b0u" },                     // uu -> u-horn u
+    { L"\x01b0o", L"\x01b0\x01a1" },             // u-horn o -> u-horn o-horn
 };
 
-// A-key transitions (doubling vowel adds circumflex): a→â, e→ê, o→ô
-struct VowelTransition {
-    wchar_t trigger; // the key pressed
-    wchar_t from;    // base vowel being modified
-    wchar_t to;      // result
-};
-
-inline const VowelTransition VowelTransitions[] = {
-    { L'a', L'a', L'\x00e2' },  // aa → â
-    { L'e', L'e', L'\x00ea' },  // ee → ê
-    { L'o', L'o', L'\x00f4' },  // oo → ô
-};
-
-// Two-char vowel transitions: "ie" → "iê", "uo" → "uô"
-// These transform the second vowel when typed after specific first vowels
-struct DiVowelTransition {
-    wchar_t first;   // preceding vowel
-    wchar_t trigger; // key pressed
-    wchar_t result;  // what trigger becomes
-};
-
-inline const DiVowelTransition DiVowelTransitions[] = {
-    { L'i', L'e', L'\x00ea' },  // ie → iê
-    { L'y', L'e', L'\x00ea' },  // ye → yê
-    { L'u', L'o', L'\x00f4' },  // uo → uô
+// WA transitions (breve: aw -> a-breve). Tried when W transitions fail.
+inline const WTransition WATransitions[] = {
+    { L"a",    L"\x0103" },                      // a -> a-breve
+    { L"oa",   L"o\x0103" },                     // oa -> o a-breve
+    { L"ua",   L"u\x0103" },                     // ua -> u a-breve
 };
 
 // Valid onset consonants (C1)
@@ -90,12 +105,10 @@ inline const std::unordered_set<std::wstring> ValidC1 = {
     L"h", L"k", L"kh", L"l", L"m", L"n", L"ng", L"ngh",
     L"nh", L"p", L"ph", L"q", L"qu", L"r", L"s", L"t", L"th",
     L"tr", L"v", L"x",
-    L"\x0111",  // đ
+    L"\x0111",  // d-stroke
 };
 
 // Valid coda consonants (C2)
-// Some codas restrict which tones are allowed:
-// c, ch, k, p, t → only S(sắc) or J(nặng) tones allowed
 inline const std::unordered_set<std::wstring> ValidC2 = {
     L"", L"c", L"ch", L"k", L"m", L"n", L"ng", L"nh", L"p", L"t",
 };
@@ -108,9 +121,9 @@ inline const std::unordered_set<std::wstring> RestrictedC2 = {
 // Valid vowel nuclei with tone position info
 struct VowelInfo {
     std::wstring vowel;
-    int tonePos;        // which char in vowel gets the tone (0-based), -1 = invalid
-    bool requiresC2;    // true = must have a coda
-    bool forbidsC2;     // true = cannot have a coda
+    int tonePos;        // which char in vowel gets the tone (0-based)
+    bool requiresC2;    // must have a coda
+    bool forbidsC2;     // cannot have a coda
 };
 
 inline const VowelInfo ValidVowels[] = {
@@ -121,59 +134,64 @@ inline const VowelInfo ValidVowels[] = {
     { L"o",    0, false, false },
     { L"u",    0, false, false },
     { L"y",    0, false, false },
-    { L"\x0103", 0, false, false },  // ă
-    { L"\x00e2", 0, false, false },  // â
-    { L"\x00ea", 0, false, false },  // ê
-    { L"\x00f4", 0, false, false },  // ô
-    { L"\x01a1", 0, false, false },  // ơ
-    { L"\x01b0", 0, false, false },  // ư
+    { L"\x0103", 0, false, false },  // a-breve
+    { L"\x00e2", 0, false, false },  // a-circumflex
+    { L"\x00ea", 0, false, false },  // e-circumflex
+    { L"\x00f4", 0, false, false },  // o-circumflex
+    { L"\x01a1", 0, false, false },  // o-horn
+    { L"\x01b0", 0, false, false },  // u-horn
 
     // Two-vowel combinations
     { L"ai",   0, false, true  },
     { L"ao",   0, false, true  },
     { L"au",   0, false, true  },
     { L"ay",   0, false, true  },
-    { L"\x00e2y", 0, false, true  },  // ây
-    { L"\x00e2u", 0, false, true  },  // âu
+    { L"\x00e2y", 0, false, true  },  // a-circumflex y
+    { L"\x00e2u", 0, false, true  },  // a-circumflex u
     { L"eo",   0, false, true  },
-    { L"\x00eau", 0, false, true  },  // êu
+    { L"\x00eau", 0, false, true  },  // e-circumflex u
     { L"ia",   0, false, true  },
     { L"iu",   0, false, true  },
-    { L"oa",   1, false, false },     // oa: tone on 'a' (new style handled separately)
+    { L"oa",   1, false, false },
     { L"oe",   1, false, false },
     { L"oi",   0, false, true  },
-    { L"\x00f4i", 0, false, true  },  // ôi
-    { L"\x01a1i", 0, false, true  },  // ơi
+    { L"\x00f4i", 0, false, true  },  // o-circumflex i
+    { L"\x01a1i", 0, false, true  },  // o-horn i
     { L"ua",   1, false, false },
     { L"ue",   1, false, false },
     { L"ui",   0, false, true  },
     { L"uy",   1, false, false },
-    { L"\x01b0\x01a1", 1, false, false },  // ươ: tone on ơ, needs C2
-    { L"\x01b0i", 0, false, true  },  // ưi
-    { L"\x01b0u", 0, false, true  },  // ưu
+    { L"\x01b0\x01a1", 1, true, false },  // u-horn o-horn: requires C2
+    { L"\x01b0i", 0, false, true  },     // u-horn i
+    { L"\x01b0u", 0, false, true  },     // u-horn u
+    { L"\x01b0" L"a", 0, false, false }, // u-horn a
 
-    // i + ê combination
-    { L"i\x00ea", 1, false, false },  // iê: needs C2
-    { L"y\x00ea", 1, false, false },  // yê: needs C2
+    // i + e-circumflex combination
+    { L"i\x00ea", 1, true, false },  // ie-circumflex: requires C2
+    { L"y\x00ea", 1, true, false },  // ye-circumflex: requires C2
 
-    // u + ô combination
-    { L"u\x00f4", 1, false, false },  // uô: needs C2
+    // u + o-circumflex combination
+    { L"u\x00f4", 1, true, false },  // uo-circumflex: requires C2
+
+    // u + e-circumflex
+    { L"u\x00ea", 1, false, false },
 
     // Three-vowel combinations
-    { L"o\x0103", 1, false, false },  // oă
+    { L"o\x0103", 1, false, false },  // o a-breve
+    { L"u\x0103", 1, false, false },  // u a-breve
     { L"oai",  1, false, true  },
     { L"oay",  1, false, true  },
-    { L"u\x00e2", 1, false, false },  // uâ: needs C2
-    { L"u\x00e2y", 1, false, true },  // uây
+    { L"u\x00e2", 1, true, false },   // u a-circumflex: requires C2
+    { L"u\x00e2y", 1, false, true },  // u a-circumflex y
     { L"uai",  1, false, true  },
     { L"uay",  1, false, true  },
-    { L"u\x00ea", 1, false, false },  // uê
     { L"uoi",  1, false, true  },
-    { L"u\x00f4i", 1, false, true },  // uôi
-    { L"\x01b0\x01a1i", 1, false, true  },  // ươi
-    { L"\x01b0\x01a1u", 1, false, true  },  // ươu
-    { L"i\x00eau", 1, false, true  },  // iêu
-    { L"y\x00eau", 1, false, true  },  // yêu
+    { L"u\x00f4i", 1, false, true },  // u o-circumflex i
+    { L"\x01b0\x01a1i", 1, false, true  },  // u-horn o-horn i
+    { L"\x01b0\x01a1u", 1, false, true  },  // u-horn o-horn u
+    { L"i\x00eau", 1, false, true  },       // i e-circumflex u
+    { L"y\x00eau", 1, false, true  },       // y e-circumflex u
+    { L"uy\x00ea", 2, true, false },        // uy e-circumflex: requires C2
 };
 
 // Map vowel string to its info for quick lookup
@@ -186,7 +204,6 @@ inline std::unordered_map<std::wstring, VowelInfo> MakeVowelMap() {
 }
 
 // Characters that can continue a C1 consonant cluster
-// e.g., 'h' after 'c','g','k','n','p','t' or 'r' after 't'
 inline bool CanContinueC1(const std::wstring& c1, wchar_t next) {
     if (next == L'h') {
         return c1 == L"c" || c1 == L"g" || c1 == L"k" || c1 == L"n"

@@ -29,6 +29,7 @@ void TelexEngine::Reset() {
     _cases.clear();
     _hasD = false;
     _result.clear();
+    _vConsumedKeys = 0;
 }
 
 bool TelexEngine::AcceptsChar(wchar_t c) {
@@ -41,14 +42,14 @@ TelexEngine::CharType TelexEngine::Classify(wchar_t c) const {
 
     if (lc == L'w') return CharType::TransitionW;
 
-    // Tone keys: only count as tone if we have vowels
-    if (TelexData::IsToneKey(lc) && !_v.empty()) {
+    // Tone keys: count as tone if we have vowels OR "gi" C1 (where 'i' acts as vowel)
+    if (TelexData::IsToneKey(lc) && (!_v.empty() || _c1 == L"gi")) {
         return CharType::ToneMark;
     }
 
     if (TelexData::IsVowel(lc)) return CharType::Vowel;
 
-    // 'd' is special: first d is consonant, second d makes đ
+    // 'd' is special: first d is consonant, second d makes d-stroke
     if (lc == L'd') return CharType::DoubleD;
 
     if (TelexData::IsConsonant(lc)) return CharType::Consonant;
@@ -77,7 +78,8 @@ TelexStates TelexEngine::PushChar(wchar_t c) {
         handled = TryAddD(lc);
         break;
     case CharType::Consonant:
-        if (_v.empty()) {
+        // Allow C2 after "gi" (where 'i' is stored in C1 but acts as vowel)
+        if (_v.empty() && _c1 != L"gi") {
             handled = TryAddC1(lc);
         } else {
             handled = TryAddC2(lc);
@@ -124,13 +126,11 @@ TelexStates TelexEngine::PushChar(wchar_t c) {
 bool TelexEngine::TryAddD(wchar_t /*c*/) {
     if (_v.empty() && _c2.empty()) {
         if (_c1.empty()) {
-            // First 'd' → regular consonant
             _c1 = L"d";
             return true;
         }
         if (_c1 == L"d" && !_hasD) {
-            // Second 'd' → đ
-            _c1 = L"\x0111"; // đ
+            _c1 = L"\x0111"; // d-stroke
             _hasD = true;
             return true;
         }
@@ -157,7 +157,7 @@ bool TelexEngine::TryAddC1(wchar_t c) {
         }
     }
 
-    // Special: 'q' + 'u' → qu (C1), not q + u(vowel)
+    // Special: 'q' + 'u' -> qu
     if (_c1 == L"q" && c == L'u') {
         _c1 = L"qu";
         return true;
@@ -167,78 +167,73 @@ bool TelexEngine::TryAddC1(wchar_t c) {
 }
 
 bool TelexEngine::TryAddVowel(wchar_t c) {
-    // Check for vowel doubling transitions: aa→â, ee→ê, oo→ô
-    if (!_v.empty()) {
-        wchar_t lastV = _v.back();
-        for (const auto& vt : TelexData::VowelTransitions) {
-            if (vt.trigger == c && lastV == vt.from) {
-                _v.back() = vt.to;
-                return true;
-            }
-        }
-        // Check for di-vowel transitions: ie→iê, uo→uô
-        for (const auto& dvt : TelexData::DiVowelTransitions) {
-            if (dvt.trigger == c && lastV == dvt.first) {
-                _v += dvt.result;
-                return true;
-            }
-        }
-    }
-
-    // Try adding vowel to nucleus
     std::wstring candidate = _v + c;
 
-    // Check if this vowel combination could be valid
-    // We check: exact match, prefix of a valid vowel, or W-transformable to valid
-    bool valid = false;
-
-    // Direct match or prefix
-    for (const auto& vi : TelexData::ValidVowels) {
-        if (vi.vowel == candidate ||
-            (vi.vowel.size() > candidate.size() && vi.vowel.substr(0, candidate.size()) == candidate)) {
-            valid = true;
-            break;
+    // 1. Check if candidate matches a vowel transition (apply it)
+    for (const auto& t : TelexData::VowelTransitions) {
+        if (t.from == candidate) {
+            _vConsumedKeys += (int)(candidate.size() - t.to.size());
+            _v = t.to;
+            return true;
         }
     }
 
-    // Also check if candidate can be W-transformed into something valid
-    if (!valid) {
-        for (const auto& wt : TelexData::WTransitions) {
-            if (wt.from == candidate) {
-                valid = true;  // can be transformed by pressing 'w'
-                break;
-            }
+    // 2. Check if candidate is a prefix of a transition (keep accumulating)
+    for (const auto& t : TelexData::VowelTransitions) {
+        if (t.from.size() > candidate.size() &&
+            t.from.substr(0, candidate.size()) == candidate) {
+            _v = candidate;
+            return true;
         }
     }
 
-    if (valid || VowelMap().count(candidate)) {
+    // 3. Check if candidate is a valid vowel
+    if (VowelMap().count(candidate)) {
         _v = candidate;
         return true;
+    }
+
+    // 4. Check if candidate is a prefix of a valid vowel
+    for (const auto& vi : TelexData::ValidVowels) {
+        if (vi.vowel.size() > candidate.size() &&
+            vi.vowel.substr(0, candidate.size()) == candidate) {
+            _v = candidate;
+            return true;
+        }
+    }
+
+    // 5. Check if candidate can be W-transformed into something valid
+    for (const auto& wt : TelexData::WTransitions) {
+        if (wt.from == candidate) {
+            _v = candidate;
+            return true;
+        }
+    }
+    for (const auto& wt : TelexData::WATransitions) {
+        if (wt.from == candidate) {
+            _v = candidate;
+            return true;
+        }
     }
 
     return false;
 }
 
 bool TelexEngine::TryAddC2(wchar_t c) {
-    if (_v.empty()) return false;
+    if (_v.empty() && _c1 != L"gi") return false;
 
     std::wstring candidate = _c2 + c;
 
-    // Check if this is a valid C2
     if (TelexData::ValidC2.count(candidate)) {
         _c2 = candidate;
         return true;
     }
 
-    // Some keys that look like C2 might actually be tone keys
-    // e.g., 'n' after a vowel could be C2 or just consonant
-    // We've already classified tone keys before reaching here, so this is C2
-
     return false;
 }
 
 bool TelexEngine::TryAddTone(wchar_t c) {
-    if (_v.empty()) return false;
+    if (_v.empty() && _c1 != L"gi") return false;
 
     Tones newTone = TelexData::GetTone(c);
 
@@ -252,16 +247,13 @@ bool TelexEngine::TryAddTone(wchar_t c) {
 }
 
 bool TelexEngine::TryAddW(wchar_t /*c*/) {
-
-    // If no vowel yet and no C1 or C1 is valid before ư
-    // standalone 'w' → ư
+    // If no vowel yet: standalone 'w' -> u-horn
     if (_v.empty()) {
-        // w as standalone vowel ư
-        _v = L"\x01b0"; // ư
+        _v = L"\x01b0"; // u-horn
         return true;
     }
 
-    // Try W transitions on existing vowels
+    // 1. Try W transitions first (horn: o-horn, u-horn, u-horn+o-horn)
     for (const auto& wt : TelexData::WTransitions) {
         if (_v == wt.from) {
             _v = wt.to;
@@ -269,8 +261,22 @@ bool TelexEngine::TryAddW(wchar_t /*c*/) {
         }
     }
 
-    // If vowel already has W applied, undo it
+    // 2. Try WA transitions (breve: a-breve)
+    for (const auto& wt : TelexData::WATransitions) {
+        if (_v == wt.from) {
+            _v = wt.to;
+            return true;
+        }
+    }
+
+    // 3. If vowel already has W applied, undo it
     for (const auto& wt : TelexData::WTransitions) {
+        if (_v == wt.to) {
+            _v = wt.from;
+            return true;
+        }
+    }
+    for (const auto& wt : TelexData::WATransitions) {
         if (_v == wt.to) {
             _v = wt.from;
             return true;
@@ -281,15 +287,13 @@ bool TelexEngine::TryAddW(wchar_t /*c*/) {
 }
 
 int TelexEngine::GetTonePosition() const {
+    // Special case: "gi" with empty _v -> tone goes on 'i' (handled in Commit)
     auto it = VowelMap().find(_v);
     if (it != VowelMap().end()) {
         int pos = it->second.tonePos;
-        // Apply oa_uy_tone1 config for specific vowel pairs
-        if (_config.oa_uy_tone1) {
-            // New style: hoà, uỳ → tone on second vowel
-            // This is already the default in our table
-        } else {
-            // Old style: hòa, ùy → tone on first vowel
+        // Apply oa_uy_tone1 config
+        if (!_config.oa_uy_tone1) {
+            // Old style: hoa -> tone on first vowel
             if (_v == L"oa" || _v == L"oe" || _v == L"uy") {
                 pos = 0;
             }
@@ -297,9 +301,9 @@ int TelexEngine::GetTonePosition() const {
         return pos;
     }
 
-    // Fallback: tone on first vowel
+    // Fallback for raw vowel forms (e.g., "uo", "ie" during composition)
     if (_v.size() == 1) return 0;
-    if (_v.size() == 2) return 1;
+    if (_v.size() >= 2) return 1;
     return 0;
 }
 
@@ -318,19 +322,10 @@ std::wstring TelexEngine::ApplyTone(const std::wstring& vowel, Tones tone, int p
 }
 
 void TelexEngine::ApplyCases(std::wstring& result) const {
-    // Apply case tracking: map cases from key input to output chars
-    // Simple approach: uppercase the corresponding output positions
-    // The case vector tracks input positions, we need to map to output
-
-    // Build mapping: which output chars came from which input positions
-    // For simplicity: if C1 was uppercase, uppercase C1 in output, etc.
-
     if (result.empty() || _cases.empty()) return;
 
-    // Track how many chars each component contributes
     size_t c1Len = _c1.size();
     size_t vLen = _v.size();
-    // c2Len is the rest
 
     size_t inputIdx = 0;
     size_t outputIdx = 0;
@@ -342,7 +337,7 @@ void TelexEngine::ApplyCases(std::wstring& result) const {
         }
     }
 
-    // Handle 'dd' → đ (two input chars, one output char)
+    // Handle 'dd' -> d-stroke (two input chars, one output char)
     if (_hasD && inputIdx < _cases.size()) {
         inputIdx++; // skip second 'd' input
     }
@@ -354,12 +349,19 @@ void TelexEngine::ApplyCases(std::wstring& result) const {
         }
     }
 
+    // Skip extra consumed vowel input keys (from transitions like "iee" -> "ie^")
+    for (int i = 0; i < _vConsumedKeys && inputIdx < _cases.size(); i++) {
+        inputIdx++;
+    }
+
     // Skip tone key in input (if any)
     if (_t != Tones::Z && inputIdx < _cases.size()) {
         inputIdx++;
     }
 
-    // Apply cases to C2 portion
+    // Skip W key in input (W doesn't produce a separate output char)
+    // We detect this by checking if keyBuffer has 'w' that was consumed by TryAddW
+    // For simplicity: just map remaining input to C2
     for (; outputIdx < result.size() && inputIdx < _cases.size(); outputIdx++, inputIdx++) {
         if (_cases[inputIdx]) {
             result[outputIdx] = (wchar_t)towupper(result[outputIdx]);
@@ -380,20 +382,27 @@ TelexStates TelexEngine::Commit() {
         return _state;
     }
 
-    // Validate the word structure
+    // "gi" fixup: if C1 is "gi" and V is empty, move 'i' from C1 to V
+    if (_c1 == L"gi" && _v.empty()) {
+        _c1 = L"g";
+        _v = L"i";
+    }
+
+    // Validate C1
     if (!_c1.empty() && !TelexData::ValidC1.count(_c1)) {
         _result = _keyBuffer;
         _state = TelexStates::CommittedInvalid;
         return _state;
     }
 
-    // If we have vowels, validate them
+    // Validate vowels
     if (!_v.empty() && !VowelMap().count(_v)) {
         _result = _keyBuffer;
         _state = TelexStates::CommittedInvalid;
         return _state;
     }
 
+    // Validate C2
     if (!_c2.empty() && !TelexData::ValidC2.count(_c2)) {
         _result = _keyBuffer;
         _state = TelexStates::CommittedInvalid;
@@ -445,7 +454,7 @@ void TelexEngine::Replay() {
     std::wstring saved = _keyBuffer;
     auto savedCases = _cases;
 
-    // Reset engine state but keep saved buffer
+    // Reset engine state
     _state = TelexStates::Valid;
     _keyBuffer.clear();
     _c1.clear();
@@ -455,6 +464,7 @@ void TelexEngine::Replay() {
     _cases.clear();
     _hasD = false;
     _result.clear();
+    _vConsumedKeys = 0;
 
     // Replay each character
     for (size_t i = 0; i < saved.size(); i++) {
@@ -479,14 +489,35 @@ std::wstring TelexEngine::Peek() const {
         return _keyBuffer;
     }
 
-    // Preview: show current composition without finalizing
-    std::wstring preview = _c1 + _v + _c2;
+    // For "gi" with no vowel: show "gi" during composition
+    std::wstring previewC1 = _c1;
+    std::wstring previewV = _v;
+
+    // Preview: show current composition
+    std::wstring preview = previewC1 + previewV + _c2;
 
     // Apply tone preview if we have vowels
-    if (!_v.empty() && _t != Tones::Z) {
-        int pos = GetTonePosition();
-        std::wstring tonedV = ApplyTone(_v, _t, pos);
-        preview = _c1 + tonedV + _c2;
+    if (!previewV.empty() && _t != Tones::Z) {
+        auto it = VowelMap().find(previewV);
+        int pos = 0;
+        if (it != VowelMap().end()) {
+            pos = it->second.tonePos;
+            if (!_config.oa_uy_tone1) {
+                if (previewV == L"oa" || previewV == L"oe" || previewV == L"uy") {
+                    pos = 0;
+                }
+            }
+        } else if (previewV.size() >= 2) {
+            pos = 1;
+        }
+        std::wstring tonedV = ApplyTone(previewV, _t, pos);
+        preview = previewC1 + tonedV + _c2;
+    }
+    // Special: "gi" + tone but no vowel -> apply tone to 'i' in preview
+    else if (_c1 == L"gi" && _v.empty() && _t != Tones::Z) {
+        std::wstring tempV = L"i";
+        std::wstring tonedV = ApplyTone(tempV, _t, 0);
+        preview = L"g" + tonedV + _c2;
     }
 
     return preview;

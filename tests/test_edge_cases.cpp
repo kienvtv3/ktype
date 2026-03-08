@@ -44,7 +44,7 @@ bool test_accepts_alpha() {
 // Reset
 bool test_reset() {
     TelexEngine e;
-    push(e, "viejt");
+    push(e, "vieejt");
     e.Commit();
     ASSERT_WSTR_EQ(e.Retrieve(), L"vi\x1ec7t");
     e.Reset();
@@ -57,9 +57,9 @@ bool test_reset() {
 // Cancel returns raw input
 bool test_cancel() {
     TelexEngine e;
-    push(e, "viejt");
+    push(e, "vieejt");
     e.Cancel();
-    ASSERT_WSTR_EQ(e.Retrieve(), L"viejt");
+    ASSERT_WSTR_EQ(e.Retrieve(), L"vieejt");
     return true;
 }
 
@@ -74,7 +74,7 @@ bool test_empty_commit() {
 // Peek (preview without committing)
 bool test_peek() {
     TelexEngine e;
-    push(e, "viej");
+    push(e, "vieej");
     std::wstring preview = e.Peek();
     // iê with nặng = iệ, so preview = viê with tone applied
     ASSERT_WSTR_EQ(preview, L"vi\x1ec7");
