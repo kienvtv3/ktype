@@ -29,7 +29,10 @@ foreach ($tool in @(@($msbuild, "MSBuild"), @($iscc, "Inno Setup (ISCC)"))) {
 
 # --- Get GitHub token from git credential store ---
 function Get-GitHubToken {
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
     $output = "protocol=https`nhost=github.com" | git credential fill 2>$null
+    $ErrorActionPreference = $prev
     foreach ($line in $output -split "`n") {
         if ($line -match '^password=(.+)$') { return $matches[1] }
     }
@@ -101,8 +104,8 @@ if ($Overwrite) {
         Invoke-GitHubApi -Method Delete -Uri "https://api.github.com/repos/$repo/releases/$($existing.id)" | Out-Null
         Write-Host "Deleted existing release $Version" -ForegroundColor DarkYellow
     } catch {}
-    git tag -d $Version 2>$null
-    git push origin --delete $Version 2>$null
+    git tag -d $Version 2>$null; $null = $LASTEXITCODE
+    git push origin --delete $Version 2>$null; $null = $LASTEXITCODE
 }
 
 $releaseBody = @{
