@@ -19,12 +19,23 @@ $repo = "kienvtv3/ktype"
 # --- Paths ---
 $msbuild = "C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools\MSBuild\Current\Bin\MSBuild.exe"
 $iscc = "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe"
+$signtool = (Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe" -ErrorAction SilentlyContinue | Sort-Object FullName -Descending | Select-Object -First 1).FullName
 
 foreach ($tool in @(@($msbuild, "MSBuild"), @($iscc, "Inno Setup (ISCC)"))) {
     if (-not (Test-Path $tool[0])) {
         Write-Error "$($tool[1]) not found at $($tool[0])"
         exit 1
     }
+}
+
+# --- Find code signing certificate ---
+$certName = "Kien Vu (KType)"
+$signingCert = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert -ErrorAction SilentlyContinue | Where-Object { $_.Subject -eq "CN=$certName" }
+$canSign = $signingCert -and $signtool
+if (-not $canSign) {
+    Write-Host "WARNING: Code signing unavailable." -ForegroundColor DarkYellow
+    if (-not $signingCert) { Write-Host "  No certificate. Run: .\create-cert.ps1 (as admin)" -ForegroundColor DarkYellow }
+    if (-not $signtool) { Write-Host "  signtool.exe not found. Install Windows SDK." -ForegroundColor DarkYellow }
 }
 
 # --- Get GitHub token from git credential store ---
@@ -74,6 +85,14 @@ Write-Host "`n[1/4] Building Release..." -ForegroundColor Yellow
 & $msbuild KType.sln /p:Configuration=Release /p:Platform=x64 /nologo /v:minimal
 if ($LASTEXITCODE -ne 0) { Write-Error "Build failed"; exit 1 }
 
+# --- Sign DLL ---
+if ($canSign) {
+    Write-Host "`nSigning KType.dll..." -ForegroundColor Yellow
+    & $signtool sign /a /s My /n $certName /fd sha256 /td sha256 /tr http://timestamp.digicert.com "build\x64\Release\KType.dll"
+    if ($LASTEXITCODE -ne 0) { Write-Host "DLL signing failed (continuing)" -ForegroundColor DarkYellow }
+    else { Write-Host "DLL signed" -ForegroundColor Green }
+}
+
 # --- Run tests ---
 Write-Host "`n[2/4] Running tests..." -ForegroundColor Yellow
 $testExe = "build\x64\Release\tests.exe"
@@ -92,6 +111,14 @@ if (-not (Test-Path $installerPath)) {
     Write-Error "Installer not found at $installerPath"
     exit 1
 }
+# Sign installer
+if ($canSign) {
+    Write-Host "Signing installer..." -ForegroundColor Yellow
+    & $signtool sign /a /s My /n $certName /fd sha256 /td sha256 /tr http://timestamp.digicert.com $installerPath
+    if ($LASTEXITCODE -ne 0) { Write-Host "Installer signing failed (continuing)" -ForegroundColor DarkYellow }
+    else { Write-Host "Installer signed" -ForegroundColor Green }
+}
+
 $size = [math]::Round((Get-Item $installerPath).Length / 1MB, 1)
 Write-Host "Created $installerName ($size MB)" -ForegroundColor Green
 
