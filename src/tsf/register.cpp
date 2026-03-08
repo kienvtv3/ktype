@@ -1,0 +1,115 @@
+#include "pch.h"
+#include "globals.h"
+
+namespace KType {
+
+static HRESULT RegisterProfiles() {
+    ATL::CComPtr<ITfInputProcessorProfileMgr> profileMgr;
+    HRESULT hr = CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr,
+        CLSCTX_INPROC_SERVER, IID_ITfInputProcessorProfileMgr, (void**)&profileMgr);
+    if (FAILED(hr)) return hr;
+
+    // Get DLL path
+    wchar_t dllPath[MAX_PATH];
+    GetModuleFileNameW(Globals::DllInstance, dllPath, MAX_PATH);
+
+    hr = profileMgr->RegisterProfile(
+        Globals::CLSID_TextService,
+        Globals::TextServiceLangId,
+        Globals::GUID_Profile,
+        Globals::TextServiceDescription,
+        (ULONG)wcslen(Globals::TextServiceDescription),
+        dllPath,
+        (ULONG)wcslen(dllPath),
+        0,     // icon index
+        NULL,  // hkl substitute
+        0,     // preferred layout
+        TRUE,  // enable by default
+        0);    // flags
+
+    return hr;
+}
+
+static HRESULT RegisterCategories() {
+    ATL::CComPtr<ITfCategoryMgr> categoryMgr;
+    HRESULT hr = CoCreateInstance(CLSID_TF_CategoryMgr, nullptr,
+        CLSCTX_INPROC_SERVER, IID_ITfCategoryMgr, (void**)&categoryMgr);
+    if (FAILED(hr)) return hr;
+
+    // Register as keyboard text input processor
+    hr = categoryMgr->RegisterCategory(Globals::CLSID_TextService,
+        GUID_TFCAT_TIP_KEYBOARD, Globals::CLSID_TextService);
+    if (FAILED(hr)) return hr;
+
+    // Support UI-less mode
+    hr = categoryMgr->RegisterCategory(Globals::CLSID_TextService,
+        GUID_TFCAT_TIPCAP_UIELEMENTENABLED, Globals::CLSID_TextService);
+    if (FAILED(hr)) return hr;
+
+    // Support immersive/UWP apps
+    hr = categoryMgr->RegisterCategory(Globals::CLSID_TextService,
+        GUID_TFCAT_TIPCAP_IMMERSIVESUPPORT, Globals::CLSID_TextService);
+    if (FAILED(hr)) return hr;
+
+    // Support system tray
+    hr = categoryMgr->RegisterCategory(Globals::CLSID_TextService,
+        GUID_TFCAT_TIPCAP_SYSTRAYSUPPORT, Globals::CLSID_TextService);
+    if (FAILED(hr)) return hr;
+
+    // Display attribute provider
+    hr = categoryMgr->RegisterCategory(Globals::CLSID_TextService,
+        GUID_TFCAT_DISPLAYATTRIBUTEPROVIDER, Globals::CLSID_TextService);
+
+    return hr;
+}
+
+static void UnregisterProfiles() {
+    ATL::CComPtr<ITfInputProcessorProfileMgr> profileMgr;
+    if (SUCCEEDED(CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr,
+        CLSCTX_INPROC_SERVER, IID_ITfInputProcessorProfileMgr, (void**)&profileMgr))) {
+        profileMgr->UnregisterProfile(Globals::CLSID_TextService,
+            Globals::TextServiceLangId, Globals::GUID_Profile, 0);
+    }
+}
+
+static void UnregisterCategories() {
+    ATL::CComPtr<ITfCategoryMgr> categoryMgr;
+    if (SUCCEEDED(CoCreateInstance(CLSID_TF_CategoryMgr, nullptr,
+        CLSCTX_INPROC_SERVER, IID_ITfCategoryMgr, (void**)&categoryMgr))) {
+        categoryMgr->UnregisterCategory(Globals::CLSID_TextService,
+            GUID_TFCAT_TIP_KEYBOARD, Globals::CLSID_TextService);
+        categoryMgr->UnregisterCategory(Globals::CLSID_TextService,
+            GUID_TFCAT_TIPCAP_UIELEMENTENABLED, Globals::CLSID_TextService);
+        categoryMgr->UnregisterCategory(Globals::CLSID_TextService,
+            GUID_TFCAT_TIPCAP_IMMERSIVESUPPORT, Globals::CLSID_TextService);
+        categoryMgr->UnregisterCategory(Globals::CLSID_TextService,
+            GUID_TFCAT_TIPCAP_SYSTRAYSUPPORT, Globals::CLSID_TextService);
+        categoryMgr->UnregisterCategory(Globals::CLSID_TextService,
+            GUID_TFCAT_DISPLAYATTRIBUTEPROVIDER, Globals::CLSID_TextService);
+    }
+}
+
+} // namespace KType
+
+// Standard COM DLL registration exports
+STDAPI DllRegisterServer() {
+    HRESULT hr = KType::RegisterProfiles();
+    if (FAILED(hr)) {
+        DllUnregisterServer();
+        return hr;
+    }
+
+    hr = KType::RegisterCategories();
+    if (FAILED(hr)) {
+        DllUnregisterServer();
+        return hr;
+    }
+
+    return S_OK;
+}
+
+STDAPI DllUnregisterServer() {
+    KType::UnregisterProfiles();
+    KType::UnregisterCategories();
+    return S_OK;
+}
