@@ -262,39 +262,46 @@ bool TelexEngine::TryAddTone(wchar_t c) {
 }
 
 bool TelexEngine::TryAddW(wchar_t /*c*/) {
-    // If no vowel yet: standalone 'w' -> u-horn
     if (_v.empty()) {
         _v = L"\x01b0"; // u-horn
         return true;
     }
 
-    // 1. Try W transitions first (horn: o-horn, u-horn, u-horn+o-horn)
-    for (const auto& wt : TelexData::WTransitions) {
-        if (_v == wt.from) {
-            _v = wt.to;
+    bool isQu = (_c1 == L"qu");
+
+    // 1. Try W transitions (full or restricted based on C1)
+    const auto* wBegin = isQu ? std::begin(TelexData::WTransitionsQ) : std::begin(TelexData::WTransitions);
+    const auto* wEnd = isQu ? std::end(TelexData::WTransitionsQ) : std::end(TelexData::WTransitions);
+    for (auto it = wBegin; it != wEnd; ++it) {
+        if (_v == it->from) {
+            _v = it->to;
             return true;
         }
     }
 
-    // 2. Try WA transitions (breve: a-breve)
-    for (const auto& wt : TelexData::WATransitions) {
-        if (_v == wt.from) {
-            _v = wt.to;
-            return true;
+    // 2. Try WA transitions (only if NOT "qu")
+    if (!isQu) {
+        for (const auto& wt : TelexData::WATransitions) {
+            if (_v == wt.from) {
+                _v = wt.to;
+                return true;
+            }
         }
     }
 
-    // 3. If vowel already has W applied, undo it
-    for (const auto& wt : TelexData::WTransitions) {
-        if (_v == wt.to) {
-            _v = wt.from;
+    // 3. Undo W (check against the same table used for forward)
+    for (auto it = wBegin; it != wEnd; ++it) {
+        if (_v == it->to) {
+            _v = it->from;
             return true;
         }
     }
-    for (const auto& wt : TelexData::WATransitions) {
-        if (_v == wt.to) {
-            _v = wt.from;
-            return true;
+    if (!isQu) {
+        for (const auto& wt : TelexData::WATransitions) {
+            if (_v == wt.to) {
+                _v = wt.from;
+                return true;
+            }
         }
     }
 

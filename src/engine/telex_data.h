@@ -102,6 +102,13 @@ inline const WTransition WATransitions[] = {
     { L"ua",   L"u\x0103" },                     // ua -> u a-breve
 };
 
+// W transitions after "qu" (restricted set — VietType: transitions_w_q)
+inline const WTransition WTransitionsQ[] = {
+    { L"u",    L"\x01b0" },                      // u → u-horn
+    { L"uo",   L"u\x01a1" },                     // uo → u o-horn
+    { L"uoi",  L"u\x01a1i" },                    // uoi → u o-horn i
+};
+
 // Vowel adjustments triggered when C2 is typed (VietType: transitions_wv_c2)
 // These adjust the vowel form based on whether a final consonant follows.
 inline const WTransition WvC2Transitions[] = {

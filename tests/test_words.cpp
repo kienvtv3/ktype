@@ -34,6 +34,9 @@ bool test_toon()   { ASSERT_WSTR_EQ(commit("tono"), L"t\x00f4n"); return true; }
 // Reverse circumflex: oo→ô, then ô+o→oo
 bool test_xoong()  { ASSERT_WSTR_EQ(commit("xoong"), L"x\x00f4ng"); return true; }    // xoong → xông (oo→ô, ng)
 bool test_xooong() { ASSERT_WSTR_EQ(commit("xooong"), L"xoong"); return true; }        // xooong → xoong (oo→ô, ô+o→oo, ng)
+// Restricted W after "qu" — no breve
+bool test_quaw() { ASSERT_WSTR_EQ(commit("quaw"), L"quaw"); return true; }  // qu+a+w → invalid (no breve after qu)
+
 // Vowel adjustments on C2 (transitions_wv_c2)
 bool test_uwat()  { ASSERT_WSTR_EQ(commit("uwat"), L"u\x0103t"); return true; }                    // ưa+t → uăt (horn→breve)
 bool test_uwon()  { ASSERT_WSTR_EQ(commit("uwon"), L"\x01b0\x01a1n"); return true; }               // ưo+n → ươn
@@ -68,6 +71,7 @@ void run_word_tests() {
     RUN_TEST(test_toon);
     RUN_TEST(test_xoong);
     RUN_TEST(test_xooong);
+    RUN_TEST(test_quaw);
     RUN_TEST(test_uwat);
     RUN_TEST(test_uwon);
     printf("\n");
