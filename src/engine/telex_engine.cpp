@@ -119,13 +119,15 @@ TelexStates TelexEngine::PushChar(wchar_t c) {
 }
 
 bool TelexEngine::TryAddD(wchar_t /*c*/) {
-    if (_v.empty() && _c2.empty()) {
-        if (_c1.empty()) {
-            _c1 = L"d";
-            return true;
-        }
-        if (_c1 == L"d" && !_hasD) {
-            _c1 = L"\x0111"; // d-stroke
+    // First 'd': only before any vowels/C2
+    if (_c1.empty() && _v.empty() && _c2.empty()) {
+        _c1 = L"d";
+        return true;
+    }
+    // Second 'd': convert to đ
+    if (_c1 == L"d" && !_hasD) {
+        if (_config.accept_separate_dd || (_v.empty() && _c2.empty())) {
+            _c1 = L"\x0111";
             _hasD = true;
             return true;
         }

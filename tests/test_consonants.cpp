@@ -34,6 +34,9 @@ bool test_restricted_c2_sac()   { ASSERT_WSTR_EQ(commit("acs"), L"\x00e1" L"c");
 bool test_restricted_c2_nang()  { ASSERT_WSTR_EQ(commit("acj"), L"\x1ea1" L"c"); return true; }  // ạc
 bool test_restricted_c2_huyen() { ASSERT_WSTR_EQ(commit("acf"), L"acf"); return true; }          // invalid → raw
 
+// accept_separate_dd: dd works after vowels
+bool test_dd_after_vowel() { ASSERT_WSTR_EQ(commit("dads"), L"\x0111\x00e1"); return true; }  // đá (d+a+d+s: second d converts C1 to đ)
+
 // Invalid C1 clusters
 bool test_invalid_c1() {
     TelexEngine e;
@@ -71,6 +74,7 @@ void run_consonant_tests() {
     RUN_TEST(test_restricted_c2_sac);
     RUN_TEST(test_restricted_c2_nang);
     RUN_TEST(test_restricted_c2_huyen);
+    RUN_TEST(test_dd_after_vowel);
     RUN_TEST(test_invalid_c1);
     printf("\n");
 }
