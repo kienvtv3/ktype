@@ -33,12 +33,16 @@ UninstallDisplayIcon={app}\ktype.ico
 SetupIconFile=ktype.ico
 WizardStyle=modern
 UsePreviousAppDir=yes
+; Don't prompt to close apps — we handle DLL replacement gracefully
+CloseApplications=no
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Files]
-Source: "..\build\x64\Release\KType.dll"; DestDir: "{app}"; Flags: ignoreversion regserver
+; restartreplace: if DLL is locked, schedule replacement on reboot
+; regserver runs AFTER file is placed (or after reboot if replaced)
+Source: "..\build\x64\Release\KType.dll"; DestDir: "{app}"; Flags: ignoreversion restartreplace regserver
 Source: "setup-keyboard.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "cleanup-keyboard.ps1"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
@@ -57,6 +61,22 @@ Filename: "powershell.exe"; \
 Type: filesandordirs; Name: "{app}"
 
 [Code]
+// Unregister old DLL before installing new one (frees TSF references)
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  DllPath: String;
+  ResultCode: Integer;
+begin
+  if CurStep = ssInstall then
+  begin
+    DllPath := ExpandConstant('{app}\KType.dll');
+    if FileExists(DllPath) then
+    begin
+      Exec('regsvr32.exe', '/u /s "' + DllPath + '"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+    end;
+  end;
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   ResultCode: Integer;
