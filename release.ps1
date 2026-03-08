@@ -30,7 +30,7 @@ foreach ($tool in @(@($msbuild, "MSBuild"), @($iscc, "Inno Setup (ISCC)"))) {
 
 # --- Find code signing certificate ---
 $certName = "Kien Vu (KType)"
-$signingCert = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert -ErrorAction SilentlyContinue | Where-Object { $_.Subject -eq "CN=$certName" }
+$signingCert = Get-ChildItem Cert:\CurrentUser\My -ErrorAction SilentlyContinue | Where-Object { $_.Subject -eq "CN=$certName" -and $_.EnhancedKeyUsageList.ObjectId -contains "1.3.6.1.5.5.7.3.3" }
 $canSign = $signingCert -and $signtool
 if (-not $canSign) {
     Write-Host "WARNING: Code signing unavailable." -ForegroundColor DarkYellow
