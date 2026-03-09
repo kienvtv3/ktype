@@ -104,8 +104,8 @@ if ($Overwrite) {
         Invoke-GitHubApi -Method Delete -Uri "https://api.github.com/repos/$repo/releases/$($existing.id)" | Out-Null
         Write-Host "Deleted existing release $Version" -ForegroundColor DarkYellow
     } catch {}
-    git tag -d $Version 2>$null; $null = $LASTEXITCODE
-    git push origin --delete $Version 2>$null; $null = $LASTEXITCODE
+    try { git tag -d $Version 2>&1 | Out-Null } catch {}
+    try { git push origin --delete $Version 2>&1 | Out-Null } catch {}
 }
 
 $releaseBody = @{
