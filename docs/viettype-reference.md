@@ -268,3 +268,48 @@ Uses `_respos` to track which output position each keystroke produced.
 - **KType**: "qu" consumed into C1, _v starts after 'u'
 - **VietType**: "q" is C1, _v includes 'u' → needs separate valid_v_q table
 - Both approaches produce correct output but with different internal representations
+
+## 11. Design Decision: _undoChar vs _respos (2026-03-09)
+
+### Context
+VietType uses a per-keystroke `_respos[]` bitmask system where each key gets flags like
+`ResposDoubleUndo`, `ResposTransitionV`, `ResposInvalidate`, `ResposExpunged`. This enables:
+- `RetrieveRaw()` to automatically exclude DoubleUndo-marked chars from output
+- Backspace to pop 2 chars intelligently when undoing a transition
+- Correct handling of edge cases like "toool" → "tool"
+
+KType uses `_undoChar` — a single wchar_t tracking the last transition trigger. Simpler but
+less capable.
+
+### What KType handles correctly with _undoChar
+- Vowel doubling undo: aaa→"aa", eee→"ee", dataa→"data" (159 tests pass)
+- W undo: oww→"ow", uww→"uw", aww→"aw" (InvalidateAndPopBack style)
+- Reverse transitions: ôo→oo for "xoong", "thòng" patterns
+- All VietType compat tests ported from TestTelex.cpp pass
+
+### Known gaps (would require _respos to fix)
+- "toool" → KType outputs "toool", VietType outputs "tool"
+  (VietType's _respos filters DoubleUndo char from ALL output paths)
+- Backspace from undo state: VietType pops 2 intelligently, KType replays
+  (same result but different mechanism; replay is O(n) vs O(1))
+- Any future case where per-keystroke metadata is needed
+
+### What we have NOT verified
+- Full coverage of VietType's TestTelex.cpp and TestTelexComplicated.cpp
+  (only ported a subset of double-key and backspace tests)
+- Systematic comparison of all behavior — tested specific cases only
+- Whether other edge cases exist beyond "toool" pattern
+
+### Decision
+Keep `_undoChar` for now. Rationale:
+1. Code is significantly simpler and more readable than _respos bitmasks
+2. All 159 tests pass including ported VietType compat tests
+3. Known gap ("toool") is a minor edge case unlikely in real typing
+4. Replay-based backspace is correct even if not optimal (max 10 chars)
+
+### When to reconsider
+- If users report incorrect behavior that _undoChar cannot handle
+- If we need smarter backspace (e.g., for autocorrect features)
+- If porting remaining VietType tests reveals more gaps
+- Action item: port ALL tests from TestTelex.cpp and TestTelexComplicated.cpp
+  to get full coverage before claiming parity

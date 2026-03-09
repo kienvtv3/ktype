@@ -72,8 +72,15 @@ inline const VTransition VowelTransitions[] = {
     { L"ieue",  L"i\x00eau" },      // ieu+e -> ie^u
     { L"yeue",  L"y\x00eau" },      // yeu+e -> ye^u
 
+    // Horn transitions (VietType: transitions_telex relaxed)
+    { L"\x01b0o",          L"\x01b0\x01a1" },  // ưo → ươ (offset=1)
+    { L"u\x01a1i",         L"\x01b0\x01a1i" }, // uơi → ươi (offset=0)
+    { L"u\x01a1u",         L"\x01b0\x01a1u" }, // uơu → ươu (offset=0)
+
     // Reverse: ô+o → oo (undo circumflex, for "xooong" → "xoong")
-    { L"\x00f4o", L"oo" },
+    // Only ô has a reverse transition — "oo" is a valid vowel (MustC2).
+    // Other circumflexes (â, ê) have no reverse because "aa"/"ee" aren't valid vowels.
+    { L"\x00f4o",           L"oo" },            // ôo → oo (undo ô)
 };
 
 // W-key transitions (horn: adds hook to o/u)
@@ -83,17 +90,17 @@ struct WTransition {
 };
 
 inline const WTransition WTransitions[] = {
-    { L"o",    L"\x01a1" },                      // o -> o-horn
-    { L"oi",   L"\x01a1i" },                     // oi -> o-horn i
-    { L"u",    L"\x01b0" },                      // u -> u-horn
-    { L"ua",   L"\x01b0" L"a" },                 // ua -> u-horn a
-    { L"ui",   L"\x01b0i" },                     // ui -> u-horn i
-    { L"uo",   L"\x01b0\x01a1" },                // uo -> u-horn o-horn
-    { L"uoi",  L"\x01b0\x01a1i" },               // uoi -> u-horn o-horn i
-    { L"uou",  L"\x01b0\x01a1u" },               // uou -> u-horn o-horn u
-    { L"uu",   L"\x01b0u" },                     // uu -> u-horn u
-    { L"\x01b0o", L"\x01b0\x01a1" },             // u-horn o -> u-horn o-horn
-    { L"\x01b0\x01a1", L"\x01b0\x01a1" },       // u-horn o-horn -> self (prevent double-w undo)
+    { L"o",    L"\x01a1" },                      // o -> ơ
+    { L"oi",   L"\x01a1i" },                     // oi -> ơi
+    { L"u",    L"\x01b0" },                      // u -> ư
+    { L"ua",   L"\x01b0" L"a" },                 // ua -> ưa
+    { L"ui",   L"\x01b0i" },                     // ui -> ưi
+    { L"uo",   L"u\x01a1" },                     // uo -> uơ (only o-horn; ư comes from WvC2)
+    { L"uoi",  L"\x01b0\x01a1i" },               // uoi -> ươi (both horns, final form)
+    { L"uou",  L"\x01b0\x01a1u" },               // uou -> ươu (both horns, final form)
+    { L"uu",   L"\x01b0u" },                     // uu -> ưu
+    { L"\x01b0o", L"\x01b0\x01a1" },             // ưo -> ươ (leading W case)
+    { L"\x01b0\x01a1", L"\x01b0\x01a1" },       // ươ -> self (prevent double-w undo)
 };
 
 // WA transitions (breve: aw -> a-breve). Tried when W transitions fail.
@@ -104,10 +111,11 @@ inline const WTransition WATransitions[] = {
 };
 
 // W transitions after "qu" (restricted set — VietType: transitions_w_q)
+// Note: In KType, 'u' is in C1 as "qu", so V doesn't start with 'u'.
+// VietType keeps C1="q", V="u...". Strip 'u' prefix from VietType entries.
 inline const WTransition WTransitionsQ[] = {
-    { L"u",    L"\x01b0" },                      // u → u-horn
-    { L"uo",   L"u\x01a1" },                     // uo → u o-horn
-    { L"uoi",  L"u\x01a1i" },                    // uoi → u o-horn i
+    { L"o",    L"\x01a1" },                       // o → o-horn
+    { L"oi",   L"\x01a1i" },                      // oi → o-horn i
 };
 
 // WA transitions after "qu" (VietType: transitions_wa_q)
@@ -125,6 +133,7 @@ inline const WTransition WvC2Transitions[] = {
 };
 
 // Valid onset consonants (C1)
+// Note: "q" is valid because "qu" can be split back to C1="q" + V="ư..." by W transition
 inline const std::unordered_set<std::wstring> ValidC1 = {
     L"", L"b", L"c", L"ch", L"d", L"g", L"gh", L"gi",
     L"h", L"k", L"kh", L"l", L"m", L"n", L"ng", L"ngh",
@@ -187,6 +196,8 @@ inline const VowelInfo ValidVowels[] = {
     { L"ue",   1, false, false },
     { L"ui",   0, false, true  },
     { L"uy",   1, false, false },
+    { L"u\x01a1", 1, true, false },       // u o-horn: requires C2 (intermediate, before WvC2)
+    { L"\x01b0o", 1, true, false },       // u-horn o: requires C2 (intermediate, before WvC2)
     { L"\x01b0\x01a1", 1, true, false },  // u-horn o-horn: requires C2
     { L"\x01b0i", 0, false, true  },     // u-horn i
     { L"\x01b0u", 0, false, true  },     // u-horn u
@@ -218,6 +229,12 @@ inline const VowelInfo ValidVowels[] = {
     { L"i\x00eau", 1, false, true  },       // i e-circumflex u
     { L"y\x00eau", 1, false, true  },       // y e-circumflex u
     { L"uy\x00ea", 2, true, false },        // uy e-circumflex: requires C2
+
+    // Additional vowel combinations (VietType parity)
+    { L"oao",  1, false, true  },           // oao: forbids C2
+    { L"oeo",  1, false, true  },           // oeo: forbids C2
+    { L"uyu",  1, false, true  },           // uyu: forbids C2
+    { L"uao",  1, false, true  },           // uao: forbids C2
 };
 
 // Map vowel string to its info for quick lookup
@@ -354,6 +371,49 @@ inline wchar_t VnToUpper(wchar_t c) {
     case L'\x1ef5': return L'\x1ef4'; // ỵ→Ỵ
     default: return (wchar_t)towupper(c);
     }
+}
+
+// Map from vowel transition "from" string to "to" string for O(1) lookup
+inline std::unordered_map<std::wstring, std::wstring> MakeVowelTransitionMap() {
+    std::unordered_map<std::wstring, std::wstring> m;
+    for (const auto& t : VowelTransitions) {
+        m[t.from] = t.to;
+    }
+    return m;
+}
+
+// Set of all proper prefixes of VowelTransitions[].from
+inline std::unordered_set<std::wstring> MakeVowelTransitionPrefixSet() {
+    std::unordered_set<std::wstring> s;
+    for (const auto& t : VowelTransitions) {
+        for (size_t len = 1; len < t.from.size(); len++) {
+            s.insert(t.from.substr(0, len));
+        }
+    }
+    return s;
+}
+
+// Set of all proper prefixes of ValidVowels[].vowel
+inline std::unordered_set<std::wstring> MakeValidVowelPrefixSet() {
+    std::unordered_set<std::wstring> s;
+    for (const auto& vi : ValidVowels) {
+        for (size_t len = 1; len < vi.vowel.size(); len++) {
+            s.insert(vi.vowel.substr(0, len));
+        }
+    }
+    return s;
+}
+
+// Set of all .from values from WTransitions[] and WATransitions[]
+inline std::unordered_set<std::wstring> MakeWTransitionFromSet() {
+    std::unordered_set<std::wstring> s;
+    for (const auto& wt : WTransitions) {
+        s.insert(wt.from);
+    }
+    for (const auto& wt : WATransitions) {
+        s.insert(wt.from);
+    }
+    return s;
 }
 
 } // namespace TelexData

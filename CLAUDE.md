@@ -27,13 +27,14 @@ ktype/
 ├── tests/               # Test suite (console application)
 │   ├── test_helper.h        # Shared macros (ASSERT_WSTR_EQ, RUN_TEST, commit helper)
 │   ├── main.cpp             # Test runner entry point
-│   ├── test_tones.cpp       # 21 tests: tone marks, toggle, replace, placement
-│   ├── test_vowels.cpp      # 13 tests: circumflex, W transitions, di-vowels
-│   ├── test_consonants.cpp  # 27 tests: dd→đ, C1/C2 clusters, restricted codas
-│   ├── test_words.cpp       # 20 tests: common Vietnamese words end-to-end
-│   ├── test_edge_cases.cpp  # 11 tests: tone position styles, peek, cancel, gi-
+│   ├── test_tones.cpp       # 23 tests: tone marks, toggle, replace, placement
+│   ├── test_vowels.cpp      # 22 tests: circumflex, W transitions, di-vowels, undo
+│   ├── test_consonants.cpp  # 28 tests: dd→đ, C1/C2 clusters, restricted codas
+│   ├── test_words.cpp       # 40 tests: common Vietnamese words end-to-end
+│   ├── test_edge_cases.cpp  # 18 tests: tone position styles, peek, cancel, gi-
 │   ├── test_backspace.cpp   # 8 tests: backspace replay behavior
-│   └── test_case.cpp        # 4 tests: uppercase handling
+│   ├── test_case.cpp        # 6 tests: uppercase handling
+│   └── test_viettype.cpp    # 119 tests: VietType compat (ported from TestTelex.cpp)
 ├── KType.sln            # Visual Studio solution (Engine, TSF, Tests projects)
 └── KType.props          # Shared MSBuild properties (C++20, W4, Unicode)
 ```

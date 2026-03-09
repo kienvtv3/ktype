@@ -1,12 +1,15 @@
 #include "test_helper.h"
 
-// Backspace removes last character and replays
+// VietType-model backspace: removes last OUTPUT char, not last keystroke
+// "á" (1 output char) → backspace → empty
+// "đồng" (4 output chars) → backspace → "đồn" (3 chars)
+
 bool test_bs_remove_tone() {
     TelexEngine e;
-    push(e, "as");   // á
-    e.Backspace();   // remove 's' → a
+    push(e, "as");   // á (1 output char)
+    e.Backspace();   // removes 'á' entirely
     e.Commit();
-    ASSERT_WSTR_EQ(e.Retrieve(), L"a");
+    ASSERT_WSTR_EQ(e.Retrieve(), L"");
     return true;
 }
 
@@ -21,28 +24,28 @@ bool test_bs_to_empty() {
 
 bool test_bs_after_circumflex() {
     TelexEngine e;
-    push(e, "aa");   // â
-    e.Backspace();   // remove second 'a' → a
+    push(e, "aa");   // â (1 output char: transition consumed 2nd 'a')
+    e.Backspace();   // removes 'â' entirely
     e.Commit();
-    ASSERT_WSTR_EQ(e.Retrieve(), L"a");
+    ASSERT_WSTR_EQ(e.Retrieve(), L"");
     return true;
 }
 
 bool test_bs_after_w() {
     TelexEngine e;
-    push(e, "ow");   // ơ
-    e.Backspace();   // remove 'w' → o
+    push(e, "ow");   // ơ (1 output char)
+    e.Backspace();   // removes 'ơ' entirely
     e.Commit();
-    ASSERT_WSTR_EQ(e.Retrieve(), L"o");
+    ASSERT_WSTR_EQ(e.Retrieve(), L"");
     return true;
 }
 
 bool test_bs_after_dd() {
     TelexEngine e;
-    push(e, "dd");   // đ
-    e.Backspace();   // → d
+    push(e, "dd");   // đ (1 output char)
+    e.Backspace();   // removes 'đ' entirely
     e.Commit();
-    ASSERT_WSTR_EQ(e.Retrieve(), L"d");
+    ASSERT_WSTR_EQ(e.Retrieve(), L"");
     return true;
 }
 

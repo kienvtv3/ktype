@@ -21,14 +21,26 @@ bool test_uwow() { ASSERT_WSTR_EQ(commit("uwow"), L"uwow"); return true; }  // �
 // Standalone W
 bool test_w_standalone() { ASSERT_WSTR_EQ(commit("w"), L"\x01b0"); return true; }  // ư
 
-// W undo (toggle)
-bool test_w_undo() { ASSERT_WSTR_EQ(commit("oww"), L"o"); return true; }
+// W InvalidateAndPopBack (VietType: 2nd W → pop + invalidate, no reversal/cycling)
+bool test_oww() { ASSERT_WSTR_EQ(commit("oww"), L"ow"); return true; }     // oww → raw "ow"
+bool test_uww() { ASSERT_WSTR_EQ(commit("uww"), L"uw"); return true; }     // uww → raw "uw"
+bool test_aww() { ASSERT_WSTR_EQ(commit("aww"), L"aw"); return true; }     // aww → raw "aw"
+bool test_OWW() { ASSERT_WSTR_EQ(commit("OWW"), L"OW"); return true; }     // OWW → raw "OW" (VietType test)
 
 // Leading W undo: ww → raw "w" (not "u")
 bool test_ww_raw() { ASSERT_WSTR_EQ(commit("ww"), L"w"); return true; }
 
 // oa, ua W transitions
 bool test_oaw() { ASSERT_WSTR_EQ(commit("oaw"), L"oaw"); return true; }      // oă requires C2 → invalid bare
+
+// Vowel transition undo (3rd same char → pop 1 + invalidate, VietType behavior)
+bool test_aaa() { ASSERT_WSTR_EQ(commit("aaa"), L"aa"); return true; }       // aaa → raw "aa"
+bool test_eee() { ASSERT_WSTR_EQ(commit("eee"), L"ee"); return true; }       // eee → raw "ee"
+bool test_ooo() { ASSERT_WSTR_EQ(commit("ooo"), L"oo"); return true; }      // ooo → DoubleUndo, oo MustC2 fail → raw "oo" (3rd 'o' filtered)
+bool test_AAA() { ASSERT_WSTR_EQ(commit("AAA"), L"AA"); return true; }       // AAA → raw "AA" (VietType test)
+bool test_dataa() { ASSERT_WSTR_EQ(commit("dataa"), L"data"); return true; } // dataa → undo → raw "data"
+
+// (VietType double-key tests moved to test_viettype.cpp)
 
 void run_vowel_tests() {
     printf("Vowel tests:\n");
@@ -43,8 +55,17 @@ void run_vowel_tests() {
     RUN_TEST(test_uo);
     RUN_TEST(test_uwow);
     RUN_TEST(test_w_standalone);
-    RUN_TEST(test_w_undo);
+    RUN_TEST(test_oww);
+    RUN_TEST(test_uww);
+    RUN_TEST(test_aww);
+    RUN_TEST(test_OWW);
     RUN_TEST(test_ww_raw);
     RUN_TEST(test_oaw);
+    RUN_TEST(test_aaa);
+    RUN_TEST(test_eee);
+    RUN_TEST(test_ooo);
+    RUN_TEST(test_AAA);
+    RUN_TEST(test_dataa);
+    // (VietType double-key tests in test_viettype.cpp)
     printf("\n");
 }
