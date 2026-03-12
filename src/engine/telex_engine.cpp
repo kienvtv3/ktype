@@ -562,8 +562,12 @@ bool TelexEngine::IsDefinitelyInvalid() const {
     std::wstring c1 = _c1, v = _v;
     if (c1 == L"gi" && v.empty()) { c1 = L"g"; v = L"i"; }
 
-    // Invalid C1
-    if (!c1.empty() && !TelexData::ValidC1.count(c1)) return true;
+    // Invalid C1 (skip for abbreviations like đc, qđ — handled by Commit)
+    if (!c1.empty() && !TelexData::ValidC1.count(c1)) {
+        bool isAbbreviation = v.empty() && _c2.empty() &&
+            _hasAbbreviation && _config.allow_abbreviations;
+        if (!isAbbreviation) return true;
+    }
 
     // Vowel validation
     if (!v.empty()) {

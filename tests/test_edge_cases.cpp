@@ -162,6 +162,25 @@ bool test_peek_forbids_c2_wit() {
     return true;
 }
 
+// Preview matches commit for abbreviations (đ + consonants)
+bool test_peek_abbr_ddc() {
+    TelexEngine e;
+    push(e, "ddc");
+    ASSERT_WSTR_EQ(e.Peek(), L"\x0111" L"c");  // đc, not "ddc"
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"\x0111" L"c");
+    return true;
+}
+
+bool test_peek_abbr_qdd() {
+    TelexEngine e;
+    push(e, "qdd");
+    ASSERT_WSTR_EQ(e.Peek(), L"q\x0111");  // qđ, not "qdd"
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"q\x0111");
+    return true;
+}
+
 // Max word length: >10 chars → invalid (raw)
 bool test_max_length() { ASSERT_WSTR_EQ(commit("abcdefghijk"), L"abcdefghijk"); return true; }
 
@@ -200,6 +219,8 @@ void run_edge_case_tests() {
     RUN_TEST(test_peek_english_virus);
     RUN_TEST(test_peek_forbids_c2_win);
     RUN_TEST(test_peek_forbids_c2_wit);
+    RUN_TEST(test_peek_abbr_ddc);
+    RUN_TEST(test_peek_abbr_qdd);
     RUN_TEST(test_gi_a);
     RUN_TEST(test_gi_tone);
     RUN_TEST(test_max_length);
