@@ -227,7 +227,7 @@ bool test_vt_bs_aoas() {
 bool test_vt_bs_heei() {
     TelexEngine e;
     push(e, "heei");
-    ASSERT_WSTR_EQ(e.Peek(), L"h\x00eai");  // hêi
+    ASSERT_WSTR_EQ(e.Peek(), L"heei");       // êi not valid vowel → raw
     e.Backspace();
     ASSERT_WSTR_EQ(e.Peek(), L"h\x00ea");   // hê
     return true;
@@ -236,7 +236,7 @@ bool test_vt_bs_heei() {
 bool test_vt_bs_owa() {
     TelexEngine e;
     push(e, "owa");
-    ASSERT_WSTR_EQ(e.Peek(), L"\x01a1" L"a");  // ơa
+    ASSERT_WSTR_EQ(e.Peek(), L"owa");            // ơa not valid vowel → raw
     e.Backspace();
     ASSERT_WSTR_EQ(e.Peek(), L"\x01a1");        // ơ
     return true;

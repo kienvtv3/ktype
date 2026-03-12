@@ -88,6 +88,7 @@ private:
     void InvalidateAndPopBack(wchar_t c);
 
     bool CheckInvariants() const;
+    bool IsDefinitelyInvalid() const;
 
     int GetTonePosition() const;
     std::wstring ApplyTone(const std::wstring& vowel, Tones tone, int pos) const;

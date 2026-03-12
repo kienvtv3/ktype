@@ -121,6 +121,16 @@ bool test_peek_invalid_c2_push() {
     return true;
 }
 
+// Preview matches commit when vowel is invalid (leading W + non-Vietnamese vowel)
+bool test_peek_invalid_v_we() {
+    TelexEngine e;
+    push(e, "we");
+    ASSERT_WSTR_EQ(e.Peek(), L"we");    // not "ưe"
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"we");
+    return true;
+}
+
 // Preview matches commit for English words in wordlist
 bool test_peek_english_virus() {
     TelexConfig cfg;
@@ -167,6 +177,7 @@ void run_edge_case_tests() {
     RUN_TEST(test_peek_invalid_c2_kobo);
     RUN_TEST(test_peek_invalid_c2_logo);
     RUN_TEST(test_peek_invalid_c2_push);
+    RUN_TEST(test_peek_invalid_v_we);
     RUN_TEST(test_peek_english_virus);
     RUN_TEST(test_gi_a);
     RUN_TEST(test_gi_tone);

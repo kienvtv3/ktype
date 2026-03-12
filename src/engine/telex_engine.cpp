@@ -545,10 +545,49 @@ void TelexEngine::ApplyCases(std::wstring& result) const {
     }
 }
 
+// Shared validation: returns true if the current state would definitely produce
+// raw output on Commit. Used by both Peek() and Commit() to avoid duplicating
+// validation logic. Does NOT check C2Mode (requiresC2/forbidsC2) since Peek
+// needs to allow incomplete syllables during composition.
+bool TelexEngine::IsDefinitelyInvalid() const {
+    if (_state == TelexStates::Invalid) return true;
+
+    // English wordlist
+    if (_config.optimize_multilang >= 1) {
+        std::wstring lower = _keyBuffer;
+        for (auto& ch : lower) ch = (wchar_t)towlower(ch);
+        if (WordListEn().count(lower)) return true;
+    }
+
+    // "gi" fixup for validation (local copies, non-mutating)
+    std::wstring c1 = _c1, v = _v;
+    if (c1 == L"gi" && v.empty()) { c1 = L"g"; v = L"i"; }
+
+    // Invalid C1
+    if (!c1.empty() && !TelexData::ValidC1.count(c1)) return true;
+
+    // Invalid vowel (allow prefixes that user might still be building)
+    if (!v.empty() && !VowelMap().count(v) &&
+        !VowelTransitionPrefixSet().count(v) &&
+        !ValidVowelPrefixSet().count(v) &&
+        !WTransitionFromSet().count(v)) {
+        return true;
+    }
+
+    // Invalid C2
+    if (!_c2.empty() && !TelexData::ValidC2.count(_c2)) return true;
+
+    // Restricted C2 tone (c, ch, k, p, t only allow sắc or nặng)
+    // Exception: đ onset bypasses this (teencode)
+    if (!_c2.empty() && TelexData::RestrictedC2.count(_c2) && c1 != L"\x0111") {
+        if (_t != Tones::Z && _t != Tones::S && _t != Tones::J) return true;
+    }
+
+    return false;
+}
+
 TelexStates TelexEngine::Commit() {
-    if (_state == TelexStates::Invalid || _state == TelexStates::CommittedInvalid) {
-        _result = RetrieveRaw();
-        _state = TelexStates::CommittedInvalid;
+    if (_state == TelexStates::Committed || _state == TelexStates::CommittedInvalid) {
         return _state;
     }
 
@@ -558,18 +597,15 @@ TelexStates TelexEngine::Commit() {
         return _state;
     }
 
-    // English word optimization: reject known English words
-    if (_config.optimize_multilang >= 1) {
-        std::wstring lower = _keyBuffer;
-        for (auto& ch : lower) ch = (wchar_t)towlower(ch);
-        if (WordListEn().count(lower)) {
-            _result = RetrieveRaw();
-            _state = TelexStates::CommittedInvalid;
-            return _state;
-        }
+    if (_state == TelexStates::Invalid) {
+        _result = RetrieveRaw();
+        _state = TelexStates::CommittedInvalid;
+        return _state;
     }
 
     // Abbreviation early commit: consonant-only word with đ transition
+    // Must check before IsDefinitelyInvalid() since abbreviations like "đc"
+    // have invalid C1 but are intentionally valid.
     if (_v.empty() && _c2.empty() && _hasAbbreviation && _config.allow_abbreviations) {
         bool hasC1Transition = std::any_of(_respos.begin(), _respos.end(),
             [](unsigned int rp) { return (rp & ResposTransitionC1) != 0; });
@@ -581,27 +617,27 @@ TelexStates TelexEngine::Commit() {
         }
     }
 
+    // Shared validation (invalid state, English wordlist, C1, vowel, C2, restricted tone)
+    if (IsDefinitelyInvalid()) {
+        _result = RetrieveRaw();
+        _state = TelexStates::CommittedInvalid;
+        return _state;
+    }
+
     // "gi" fixup: if C1 is "gi" and V is empty, move 'i' from C1 to V
     if (_c1 == L"gi" && _v.empty()) {
         _c1 = L"g";
         _v = L"i";
     }
 
-    // Validate C1
-    if (!_c1.empty() && !TelexData::ValidC1.count(_c1)) {
-        _result = RetrieveRaw();
-        _state = TelexStates::CommittedInvalid;
-        return _state;
-    }
-
-    // Validate vowels
+    // Strict vowel check: must be in VowelMap (no prefix allowance)
     if (!_v.empty() && !VowelMap().count(_v)) {
         _result = RetrieveRaw();
         _state = TelexStates::CommittedInvalid;
         return _state;
     }
 
-    // Validate C2Mode constraints
+    // C2Mode constraints (complete syllable only — not checked by IsDefinitelyInvalid)
     if (!_v.empty() && VowelMap().count(_v)) {
         const auto& vi = VowelMap().at(_v);
         if (vi.requiresC2 && _c2.empty()) {
@@ -610,23 +646,6 @@ TelexStates TelexEngine::Commit() {
             return _state;
         }
         if (vi.forbidsC2 && !_c2.empty()) {
-            _result = RetrieveRaw();
-            _state = TelexStates::CommittedInvalid;
-            return _state;
-        }
-    }
-
-    // Validate C2
-    if (!_c2.empty() && !TelexData::ValidC2.count(_c2)) {
-        _result = RetrieveRaw();
-        _state = TelexStates::CommittedInvalid;
-        return _state;
-    }
-
-    // Check tone restriction: restricted C2 only allows S or J tones
-    // Exception: d-bar (đ) onset bypasses this check (teencode)
-    if (!_c2.empty() && TelexData::RestrictedC2.count(_c2) && _c1 != L"\x0111") {
-        if (_t != Tones::Z && _t != Tones::S && _t != Tones::J) {
             _result = RetrieveRaw();
             _state = TelexStates::CommittedInvalid;
             return _state;
@@ -776,8 +795,8 @@ std::wstring TelexEngine::RetrieveRaw() const {
 }
 
 std::wstring TelexEngine::Peek() const {
-    if (_state == TelexStates::Invalid) {
-        // VietType behavior: Peek returns filtered raw keys when word is invalid
+    // Shared validation: if Commit would reject, Peek shows raw too
+    if (IsDefinitelyInvalid()) {
         return RetrieveRaw();
     }
 
@@ -785,54 +804,25 @@ std::wstring TelexEngine::Peek() const {
         return RetrieveRaw();
     }
 
-    // If C2 contains an invalid consonant (permissively accepted), show raw text.
-    // The word will commit as raw anyway, so preview should match commit output.
-    // (e.g., "push": C2="h" invalid → don't show "púh" when commit gives "push")
-    if (!_c2.empty() && !TelexData::ValidC2.count(_c2)) {
-        return RetrieveRaw();
-    }
-
-    // English word check: if the raw keystrokes match a known English word,
-    // show raw text so preview matches commit output.
-    // (e.g., "virus" → show "virus" not "vírú")
-    if (_config.optimize_multilang >= 1) {
-        std::wstring lower = _keyBuffer;
-        for (auto& ch : lower) ch = (wchar_t)towlower(ch);
-        if (WordListEn().count(lower)) {
-            return RetrieveRaw();
-        }
-    }
-
-    // For "gi" with no vowel: show "gi" during composition
-    std::wstring previewC1 = _c1;
-    std::wstring previewV = _v;
-
-    // VietType: if vowel isn't in VowelMap and tone is set, return raw
-    // (can't determine tone position → fall back to raw display)
-    // Exception: "gi" with empty V has tone on 'i' in C1
-    if (!previewV.empty() && _t != Tones::Z && !VowelMap().count(previewV)) {
-        return RetrieveRaw();
-    }
-
     // Preview: show current composition
-    std::wstring preview = previewC1 + previewV + _c2;
+    std::wstring preview = _c1 + _v + _c2;
 
     // Apply tone preview if we have vowels
-    if (!previewV.empty() && _t != Tones::Z) {
-        auto it = VowelMap().find(previewV);
+    if (!_v.empty() && _t != Tones::Z) {
+        auto it = VowelMap().find(_v);
         int pos = 0;
         if (it != VowelMap().end()) {
             pos = it->second.tonePos;
             if (!_config.oa_uy_tone1) {
-                if (previewV == L"oa" || previewV == L"oe" || previewV == L"uy") {
+                if (_v == L"oa" || _v == L"oe" || _v == L"uy") {
                     pos = 0;
                 }
             }
-        } else if (previewV.size() >= 2) {
+        } else if (_v.size() >= 2) {
             pos = 1;
         }
-        std::wstring tonedV = ApplyTone(previewV, _t, pos);
-        preview = previewC1 + tonedV + _c2;
+        std::wstring tonedV = ApplyTone(_v, _t, pos);
+        preview = _c1 + tonedV + _c2;
     }
     // Special: "gi" + tone but no vowel -> apply tone to 'i' in preview
     else if (_c1 == L"gi" && _v.empty() && _t != Tones::Z) {
