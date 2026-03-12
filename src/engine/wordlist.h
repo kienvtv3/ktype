@@ -27,9 +27,15 @@ inline const std::unordered_set<std::wstring>& WordListEn() {
     return words;
 }
 
-// Level 2: VietType wlist_en_2 (234 words) — extended list
+// Level 2: VietType wlist_en_2 + KType additions — extended list
+// KType additions: missing singular/plural pairs for L1/L2 words,
+// where Telex collision does NOT produce a common Vietnamese word.
+// Skipped: beer→bể, car→cả, chair→chải, char→chả, bar→bả, tar→tả,
+//   hair→hải, hoof→hồ, roof→rồ, moor→mổ, boor→bổ, goof→gồ, sex→sẽ,
+//   moon→môn, queen→quên, teen→tên, tree→trê, barn→bản, sir→sỉ, vex→vẽ
 inline const std::unordered_set<std::wstring>& WordListEn2() {
     static const std::unordered_set<std::wstring> words = {
+        // --- VietType wlist_en_2 original ---
         L"ask", L"bask", L"bays", L"bias", L"bins", L"boar", L"boas", L"boast",
         L"boats", L"books", L"booms", L"bore", L"born", L"bosom", L"bums", L"bury",
         L"busy", L"buys", L"cask", L"chaps", L"charm", L"chasm", L"cheeks", L"cheeps",
@@ -48,7 +54,7 @@ inline const std::unordered_set<std::wstring>& WordListEn2() {
         L"noes", L"nooks", L"norm", L"nose", L"nuns", L"oaf", L"oaks", L"oar",
         L"oks", L"or", L"ox", L"oxen", L"pair", L"pangs", L"pans", L"papas",
         L"par", L"pas", L"past", L"pasta", L"pats", L"pawn", L"pawns", L"pays",
-        L"peeks", L"peeps", L"peer", L"penes", L"pens", L"peps", L"per", L"pest",
+        L"peek", L"peeks", L"peeps", L"peer", L"penes", L"pens", L"peps", L"per", L"pest",
         L"pets", L"photos", L"pieces", L"pins", L"pis", L"pits", L"poems", L"poets",
         L"poops", L"poor", L"pops", L"pore", L"pose", L"post", L"pots", L"puns",
         L"pups", L"puree", L"pus", L"puts", L"quays", L"queens", L"queer", L"quips",
@@ -60,6 +66,20 @@ inline const std::unordered_set<std::wstring>& WordListEn2() {
         L"those", L"tings", L"tongs", L"tons", L"tore", L"torn", L"town", L"trays",
         L"trees", L"treks", L"trims", L"trips", L"troops", L"tureen", L"tusk", L"veer",
         L"vips", L"xix",
+        // --- KType: missing singulars for ee→ê collisions ---
+        L"cheek", L"cheep", L"deep", L"deer", L"leek", L"leer", L"meet", L"peep",
+        L"reek", L"rook", L"see", L"seek",
+        // --- KType: missing singulars for oo→ô collisions ---
+        // Skipped: room→rôm (rôm sảy = prickly heat)
+        L"book", L"boom", L"cook", L"hook", L"hoop", L"look", L"nook", L"poop",
+        L"troop",
+        // --- KType: missing singulars for r→hỏi tone collisions ---
+        // Skipped: arm→ảm (ảm đạm), burn→bủn (bủn rủn), corn→cỏn (cỏn con),
+        //   honor→hổn (hổn hển), lair→lải (lải nhải), turn→tủn (tủn mủn)
+        L"churn", L"harm", L"horn", L"motor", L"ore", L"rotor", L"term", L"urn",
+        // --- KType: other missing singulars/forms ---
+        // Skipped: reef→rề (rề rà)
+        L"leper", L"meter", L"metre", L"pester", L"peter", L"tester",
     };
     return words;
 }

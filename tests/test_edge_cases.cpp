@@ -121,6 +121,29 @@ bool test_peek_invalid_c2_push() {
     return true;
 }
 
+// Preview matches commit for English words in wordlist
+bool test_peek_english_peek() {
+    TelexConfig cfg;
+    cfg.optimize_multilang = 2;
+    TelexEngine e(cfg);
+    push(e, "peek");
+    ASSERT_WSTR_EQ(e.Peek(), L"peek");   // not "pêk"
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"peek");
+    return true;
+}
+
+bool test_peek_english_virus() {
+    TelexConfig cfg;
+    cfg.optimize_multilang = 1;
+    TelexEngine e(cfg);
+    push(e, "virus");
+    ASSERT_WSTR_EQ(e.Peek(), L"virus");  // not "vírú"
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"virus");
+    return true;
+}
+
 // Max word length: >10 chars → invalid (raw)
 bool test_max_length() { ASSERT_WSTR_EQ(commit("abcdefghijk"), L"abcdefghijk"); return true; }
 
@@ -155,6 +178,8 @@ void run_edge_case_tests() {
     RUN_TEST(test_peek_invalid_c2_kobo);
     RUN_TEST(test_peek_invalid_c2_logo);
     RUN_TEST(test_peek_invalid_c2_push);
+    RUN_TEST(test_peek_english_peek);
+    RUN_TEST(test_peek_english_virus);
     RUN_TEST(test_gi_a);
     RUN_TEST(test_gi_tone);
     RUN_TEST(test_max_length);

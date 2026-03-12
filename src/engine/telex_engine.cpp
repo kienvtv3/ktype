@@ -797,6 +797,20 @@ std::wstring TelexEngine::Peek() const {
         return RetrieveRaw();
     }
 
+    // English word check: if the raw keystrokes match a known English word,
+    // show raw text so preview matches commit output.
+    // (e.g., "peek" → show "peek" not "pêk")
+    if (_config.optimize_multilang >= 1) {
+        std::wstring lower = _keyBuffer;
+        for (auto& ch : lower) ch = (wchar_t)towlower(ch);
+        if (WordListEn().count(lower)) {
+            return RetrieveRaw();
+        }
+        if (_config.optimize_multilang >= 2 && WordListEn2().count(lower)) {
+            return RetrieveRaw();
+        }
+    }
+
     // For "gi" with no vowel: show "gi" during composition
     std::wstring previewC1 = _c1;
     std::wstring previewV = _v;
