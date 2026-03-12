@@ -269,6 +269,13 @@ bool TelexEngine::TryAddC1(wchar_t c, bool ccase) {
 bool TelexEngine::TryAddVowel(wchar_t c, bool ccase) {
     std::wstring candidate = _v + c;
 
+    // If C2 contains an invalid consonant (permissively accepted), reject vowel addition.
+    // The word will commit as raw anyway, so preview should match commit output.
+    // (e.g., "kobo": C2="b" invalid → don't let oo→ô transition produce misleading "kôb")
+    if (!_c2.empty() && !TelexData::ValidC2.count(_c2)) {
+        return false;
+    }
+
     // 1. Check if candidate matches a vowel transition (apply it)
     // HACK: "khongoo" special case — when C2 is non-empty and V would become ôo, invalidate
     // (VietType: if _c2 non-empty && c=='o' && V=="ôo", Invalidate instead of transitioning)

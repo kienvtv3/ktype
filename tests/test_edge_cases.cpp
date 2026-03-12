@@ -93,6 +93,25 @@ bool test_ai_with_c2() { ASSERT_WSTR_EQ(commit("ain"), L"ain"); return true; }  
 bool test_uo_no_c2()   { ASSERT_WSTR_EQ(commit("uoo"), L"uoo"); return true; }          // uô alone → invalid
 bool test_uo_with_c2() { ASSERT_WSTR_EQ(commit("uoong"), L"u\x00f4ng"); return true; }  // uông → valid
 
+// Preview matches commit when C2 is invalid (no misleading vowel transitions)
+bool test_peek_invalid_c2_kobo() {
+    TelexEngine e;
+    push(e, "kobo");
+    ASSERT_WSTR_EQ(e.Peek(), L"kobo");   // not "kôb"
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"kobo");
+    return true;
+}
+
+bool test_peek_invalid_c2_logo() {
+    TelexEngine e;
+    push(e, "logo");
+    ASSERT_WSTR_EQ(e.Peek(), L"logo");   // not "lôg"
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"logo");
+    return true;
+}
+
 // Max word length: >10 chars → invalid (raw)
 bool test_max_length() { ASSERT_WSTR_EQ(commit("abcdefghijk"), L"abcdefghijk"); return true; }
 
@@ -124,6 +143,8 @@ void run_edge_case_tests() {
     RUN_TEST(test_ai_with_c2);
     RUN_TEST(test_uo_no_c2);
     RUN_TEST(test_uo_with_c2);
+    RUN_TEST(test_peek_invalid_c2_kobo);
+    RUN_TEST(test_peek_invalid_c2_logo);
     RUN_TEST(test_gi_a);
     RUN_TEST(test_gi_tone);
     RUN_TEST(test_max_length);
