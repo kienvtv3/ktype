@@ -39,7 +39,21 @@ bool test_dd_after_vowel() { ASSERT_WSTR_EQ(commit("dads"), L"\x0111\x00e1"); re
 
 // Invalid C1 clusters
 bool test_invalid_c1() {
+    // With abbreviations enabled, consonants chain permissively (state Valid),
+    // but output is raw because C1 is invalid and no đ abbreviation formed.
     TelexEngine e;
+    push(e, "bxa");
+    ASSERT_WSTR_EQ(e.Peek(), L"bxa");
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"bxa");
+    return true;
+}
+
+bool test_invalid_c1_no_abbrev() {
+    // With abbreviations disabled, invalid C1 goes to Invalid state immediately.
+    TelexConfig cfg;
+    cfg.allow_abbreviations = false;
+    TelexEngine e(cfg);
     e.PushChar(L'b');
     e.PushChar(L'x');
     ASSERT_EQ(e.PushChar(L'a'), TelexStates::Invalid);
@@ -76,5 +90,6 @@ void run_consonant_tests() {
     RUN_TEST(test_restricted_c2_huyen);
     RUN_TEST(test_dd_after_vowel);
     RUN_TEST(test_invalid_c1);
+    RUN_TEST(test_invalid_c1_no_abbrev);
     printf("\n");
 }

@@ -181,6 +181,42 @@ bool test_peek_abbr_qdd() {
     return true;
 }
 
+// Abbreviation with consonant prefix before dd→đ
+bool test_peek_abbr_vndd() {
+    TelexEngine e;
+    push(e, "VNDD");
+    ASSERT_WSTR_EQ(e.Peek(), L"VN\x0110");  // VNĐ
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"VN\x0110");
+    return true;
+}
+
+bool test_peek_abbr_csdd() {
+    TelexEngine e;
+    push(e, "csdd");
+    ASSERT_WSTR_EQ(e.Peek(), L"cs\x0111");  // csđ
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"cs\x0111");
+    return true;
+}
+
+// Standalone Vietnamese alphabet letters (â, ă) should commit as-is
+bool test_standalone_aa() {
+    ASSERT_WSTR_EQ(commit("aa"), L"\x00e2");   // â
+    return true;
+}
+
+bool test_standalone_aw() {
+    ASSERT_WSTR_EQ(commit("aw"), L"\x0103");   // ă
+    return true;
+}
+
+// But â/ă with C1 and no C2 still requires C2 (not standalone)
+bool test_non_standalone_aa() {
+    ASSERT_WSTR_EQ(commit("taa"), L"taa");     // tâ requires C2 → raw
+    return true;
+}
+
 // Max word length: >10 chars → invalid (raw)
 bool test_max_length() { ASSERT_WSTR_EQ(commit("abcdefghijk"), L"abcdefghijk"); return true; }
 
@@ -221,6 +257,11 @@ void run_edge_case_tests() {
     RUN_TEST(test_peek_forbids_c2_wit);
     RUN_TEST(test_peek_abbr_ddc);
     RUN_TEST(test_peek_abbr_qdd);
+    RUN_TEST(test_peek_abbr_vndd);
+    RUN_TEST(test_peek_abbr_csdd);
+    RUN_TEST(test_standalone_aa);
+    RUN_TEST(test_standalone_aw);
+    RUN_TEST(test_non_standalone_aa);
     RUN_TEST(test_gi_a);
     RUN_TEST(test_gi_tone);
     RUN_TEST(test_max_length);

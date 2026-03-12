@@ -137,10 +137,12 @@ TelexStates TelexEngine::PushChar(wchar_t c) {
         // Allow C2 after "gi" (where 'i' is stored in C1 but acts as vowel)
         if (_v.empty() && _c1 != L"gi") {
             handled = TryAddC1(lc, ccase);
-            // Abbreviation: allow consonant chaining (e.g., "ddc"→"đc")
-            if (!handled && _config.allow_abbreviations && _hasD && _c2.empty()) {
+            // Abbreviation: permissively chain consonants into C1 so dd→đ can
+            // occur later (e.g., "ddc"→"đc", "vndd"→"vnđ", "csdd"→"csđ").
+            // Only flag _hasAbbreviation when đ already formed.
+            if (!handled && _config.allow_abbreviations && _c2.empty()) {
                 _c1 += lc;
-                _hasAbbreviation = true;
+                if (_hasD) _hasAbbreviation = true;
                 _cases.push_back(ccase);
                 _respos.push_back(_respos_current++);
                 handled = true;
@@ -652,7 +654,10 @@ TelexStates TelexEngine::Commit() {
             _state = TelexStates::CommittedInvalid;
             return _state;
         }
-        if (it->second.requiresC2 && _c2.empty()) {
+        // requiresC2: skip for standalone single-char vowels (â, ă)
+        // to allow typing Vietnamese alphabet letters
+        bool isStandaloneLetter = _c1.empty() && _c2.empty() && _v.size() == 1;
+        if (it->second.requiresC2 && _c2.empty() && !isStandaloneLetter) {
             _result = RetrieveRaw();
             _state = TelexStates::CommittedInvalid;
             return _state;
