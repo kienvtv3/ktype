@@ -166,7 +166,7 @@ bool test_peek_forbids_c2_wit() {
 bool test_peek_abbr_ddc() {
     TelexEngine e;
     push(e, "ddc");
-    ASSERT_WSTR_EQ(e.Peek(), L"\x0111" L"c");  // đc, not "ddc"
+    ASSERT_WSTR_EQ(e.Peek(), L"\x0111" L"c");  // đc
     e.Commit();
     ASSERT_WSTR_EQ(e.Retrieve(), L"\x0111" L"c");
     return true;
@@ -191,12 +191,14 @@ bool test_peek_abbr_vndd() {
     return true;
 }
 
-bool test_peek_abbr_csdd() {
+// Invalid C1 with tone: "cross" must produce raw "cross" not "cros"
+// Regression: permissive C1 chaining kept state Valid, tone 's' applied,
+// second 's' triggered DoubleUndo → filtered from raw output
+bool test_cross_raw() {
     TelexEngine e;
-    push(e, "csdd");
-    ASSERT_WSTR_EQ(e.Peek(), L"cs\x0111");  // csđ
+    push(e, "cross");
     e.Commit();
-    ASSERT_WSTR_EQ(e.Retrieve(), L"cs\x0111");
+    ASSERT_WSTR_EQ(e.Retrieve(), L"cross");
     return true;
 }
 
@@ -258,7 +260,7 @@ void run_edge_case_tests() {
     RUN_TEST(test_peek_abbr_ddc);
     RUN_TEST(test_peek_abbr_qdd);
     RUN_TEST(test_peek_abbr_vndd);
-    RUN_TEST(test_peek_abbr_csdd);
+    RUN_TEST(test_cross_raw);
     RUN_TEST(test_standalone_aa);
     RUN_TEST(test_standalone_aw);
     RUN_TEST(test_non_standalone_aa);

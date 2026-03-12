@@ -137,15 +137,18 @@ TelexStates TelexEngine::PushChar(wchar_t c) {
         // Allow C2 after "gi" (where 'i' is stored in C1 but acts as vowel)
         if (_v.empty() && _c1 != L"gi") {
             handled = TryAddC1(lc, ccase);
-            // Abbreviation: permissively chain consonants into C1 so dd→đ can
-            // occur later (e.g., "ddc"→"đc", "vndd"→"vnđ", "csdd"→"csđ").
-            // Only flag _hasAbbreviation when đ already formed.
+            // Abbreviation chaining: allow consonant after đ (ddc→đc)
+            // and "vn" prefix for VNĐ (vndd→vnđ)
             if (!handled && _config.allow_abbreviations && _c2.empty()) {
-                _c1 += lc;
-                if (_hasD) _hasAbbreviation = true;
-                _cases.push_back(ccase);
-                _respos.push_back(_respos_current++);
-                handled = true;
+                bool allowChain = _hasD ||                      // after đ: ddc→đc
+                    (_c1 == L"v" && lc == L'n');                // vn prefix for VNĐ
+                if (allowChain) {
+                    _c1 += lc;
+                    if (_hasD) _hasAbbreviation = true;
+                    _cases.push_back(ccase);
+                    _respos.push_back(_respos_current++);
+                    handled = true;
+                }
             }
         } else {
             handled = TryAddC2(lc, ccase);
