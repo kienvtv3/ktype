@@ -122,17 +122,6 @@ bool test_peek_invalid_c2_push() {
 }
 
 // Preview matches commit for English words in wordlist
-bool test_peek_english_peek() {
-    TelexConfig cfg;
-    cfg.optimize_multilang = 2;
-    TelexEngine e(cfg);
-    push(e, "peek");
-    ASSERT_WSTR_EQ(e.Peek(), L"peek");   // not "pêk"
-    e.Commit();
-    ASSERT_WSTR_EQ(e.Retrieve(), L"peek");
-    return true;
-}
-
 bool test_peek_english_virus() {
     TelexConfig cfg;
     cfg.optimize_multilang = 1;
@@ -178,7 +167,6 @@ void run_edge_case_tests() {
     RUN_TEST(test_peek_invalid_c2_kobo);
     RUN_TEST(test_peek_invalid_c2_logo);
     RUN_TEST(test_peek_invalid_c2_push);
-    RUN_TEST(test_peek_english_peek);
     RUN_TEST(test_peek_english_virus);
     RUN_TEST(test_gi_a);
     RUN_TEST(test_gi_tone);

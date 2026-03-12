@@ -451,14 +451,9 @@ bool test_vt_english_virus()  { TelexConfig c; c.optimize_multilang = 1; ASSERT_
 bool test_vt_english_horse()  { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("horse", c), L"horse"); return true; }
 bool test_vt_english_surf()   { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("surf", c), L"surf"); return true; }
 bool test_vt_english_doors()  { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("doors", c), L"doors"); return true; }
-bool test_vt_english_desk_l2()  { TelexConfig c; c.optimize_multilang = 2; ASSERT_WSTR_EQ(commit("desk", c), L"desk"); return true; }
-bool test_vt_english_ghost_l2() { TelexConfig c; c.optimize_multilang = 2; ASSERT_WSTR_EQ(commit("ghost", c), L"ghost"); return true; }
 bool test_vt_english_Horse()  { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("Horse", c), L"Horse"); return true; }
 bool test_vt_english_VIRUS()  { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("VIRUS", c), L"VIRUS"); return true; }
 bool test_vt_english_off()    { TelexConfig c; c.optimize_multilang = 0; ASSERT_WSTR_EQ(commit("virus", c), L"v\x00edu"); return true; }
-bool test_vt_english_desk_l1() { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("desk", c), L"d\x00e9k"); return true; }
-bool test_vt_english_DENSE_l2() { TelexConfig c; c.optimize_multilang = 2; ASSERT_WSTR_EQ(commit("DENSE", c), L"DENSE"); return true; }
-bool test_vt_english_dense_l2() { TelexConfig c; c.optimize_multilang = 2; ASSERT_WSTR_EQ(commit("dense", c), L"dense"); return true; }
 bool test_vt_english_VIRUS_l1() { TelexConfig c; c.optimize_multilang = 1; ASSERT_WSTR_EQ(commit("VIRUS", c), L"VIRUS"); return true; }
 
 // =============================================================================
@@ -606,14 +601,9 @@ void run_viettype_tests() {
     RUN_TEST(test_vt_english_horse);
     RUN_TEST(test_vt_english_surf);
     RUN_TEST(test_vt_english_doors);
-    RUN_TEST(test_vt_english_desk_l2);
-    RUN_TEST(test_vt_english_ghost_l2);
     RUN_TEST(test_vt_english_Horse);
     RUN_TEST(test_vt_english_VIRUS);
     RUN_TEST(test_vt_english_off);
-    RUN_TEST(test_vt_english_desk_l1);
-    RUN_TEST(test_vt_english_DENSE_l2);
-    RUN_TEST(test_vt_english_dense_l2);
     RUN_TEST(test_vt_english_VIRUS_l1);
 
     printf("\n");

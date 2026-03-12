@@ -41,7 +41,7 @@ struct TelexConfig {
     bool oa_uy_tone1 = true;
     bool accept_separate_dd = true;  // Allow dd→đ even after vowels typed
     bool allow_abbreviations = true; // Allow đ abbreviations: "ddc"→"đc", "qdd"→"qđ"
-    int optimize_multilang = 2;      // 0=off, 1=basic (wlist_en), 2=extended (+ wlist_en_2)
+    int optimize_multilang = 1;      // 0=off, 1=on (wlist_en)
 };
 
 class TelexEngine {
