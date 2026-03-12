@@ -639,18 +639,16 @@ TelexStates TelexEngine::Commit() {
         _v = L"i";
     }
 
-    // Strict vowel check: must be in VowelMap (no prefix allowance)
-    if (!_v.empty() && !VowelMap().count(_v)) {
-        _result = RetrieveRaw();
-        _state = TelexStates::CommittedInvalid;
-        return _state;
-    }
-
-    // requiresC2: complete syllable must have coda (e.g., iê, uô need C2)
-    // Note: forbidsC2 is already checked by IsDefinitelyInvalid()
-    if (!_v.empty() && VowelMap().count(_v)) {
-        const auto& vi = VowelMap().at(_v);
-        if (vi.requiresC2 && _c2.empty()) {
+    // Vowel validation: must be in VowelMap, and requiresC2 must be satisfied
+    // (forbidsC2 is already checked by IsDefinitelyInvalid())
+    if (!_v.empty()) {
+        auto it = VowelMap().find(_v);
+        if (it == VowelMap().end()) {
+            _result = RetrieveRaw();
+            _state = TelexStates::CommittedInvalid;
+            return _state;
+        }
+        if (it->second.requiresC2 && _c2.empty()) {
             _result = RetrieveRaw();
             _state = TelexStates::CommittedInvalid;
             return _state;
