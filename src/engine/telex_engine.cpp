@@ -790,6 +790,13 @@ std::wstring TelexEngine::Peek() const {
         return RetrieveRaw();
     }
 
+    // If C2 contains an invalid consonant (permissively accepted), show raw text.
+    // The word will commit as raw anyway, so preview should match commit output.
+    // (e.g., "push": C2="h" invalid → don't show "púh" when commit gives "push")
+    if (!_c2.empty() && !TelexData::ValidC2.count(_c2)) {
+        return RetrieveRaw();
+    }
+
     // For "gi" with no vowel: show "gi" during composition
     std::wstring previewC1 = _c1;
     std::wstring previewV = _v;

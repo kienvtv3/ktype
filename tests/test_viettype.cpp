@@ -281,7 +281,7 @@ bool test_vt_bs_hieef() {
 bool test_vt_bs_gifg() {
     TelexEngine e;
     push(e, "gifg");
-    ASSERT_WSTR_EQ(e.Peek(), L"g\x00ecg");  // gìg
+    ASSERT_WSTR_EQ(e.Peek(), L"gifg");       // raw (C2="g" invalid, preview matches commit)
     e.Backspace();
     ASSERT_WSTR_EQ(e.Peek(), L"g\x00ec");   // gì
     e.Backspace();

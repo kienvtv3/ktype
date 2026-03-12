@@ -112,6 +112,15 @@ bool test_peek_invalid_c2_logo() {
     return true;
 }
 
+bool test_peek_invalid_c2_push() {
+    TelexEngine e;
+    push(e, "push");
+    ASSERT_WSTR_EQ(e.Peek(), L"push");   // not "púh"
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"push");
+    return true;
+}
+
 // Max word length: >10 chars → invalid (raw)
 bool test_max_length() { ASSERT_WSTR_EQ(commit("abcdefghijk"), L"abcdefghijk"); return true; }
 
@@ -145,6 +154,7 @@ void run_edge_case_tests() {
     RUN_TEST(test_uo_with_c2);
     RUN_TEST(test_peek_invalid_c2_kobo);
     RUN_TEST(test_peek_invalid_c2_logo);
+    RUN_TEST(test_peek_invalid_c2_push);
     RUN_TEST(test_gi_a);
     RUN_TEST(test_gi_tone);
     RUN_TEST(test_max_length);
