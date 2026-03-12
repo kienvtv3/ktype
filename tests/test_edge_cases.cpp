@@ -143,6 +143,25 @@ bool test_peek_english_virus() {
     return true;
 }
 
+// Preview matches commit: vowel forbidsC2 but C2 present (W + NoC2 vowel + C2)
+bool test_peek_forbids_c2_win() {
+    TelexEngine e;
+    push(e, "win");
+    ASSERT_WSTR_EQ(e.Peek(), L"win");    // not "ưin" — ưi forbids C2
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"win");
+    return true;
+}
+
+bool test_peek_forbids_c2_wit() {
+    TelexEngine e;
+    push(e, "wit");
+    ASSERT_WSTR_EQ(e.Peek(), L"wit");    // not "ưit"
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"wit");
+    return true;
+}
+
 // Max word length: >10 chars → invalid (raw)
 bool test_max_length() { ASSERT_WSTR_EQ(commit("abcdefghijk"), L"abcdefghijk"); return true; }
 
@@ -179,6 +198,8 @@ void run_edge_case_tests() {
     RUN_TEST(test_peek_invalid_c2_push);
     RUN_TEST(test_peek_invalid_v_we);
     RUN_TEST(test_peek_english_virus);
+    RUN_TEST(test_peek_forbids_c2_win);
+    RUN_TEST(test_peek_forbids_c2_wit);
     RUN_TEST(test_gi_a);
     RUN_TEST(test_gi_tone);
     RUN_TEST(test_max_length);

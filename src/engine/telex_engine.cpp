@@ -547,8 +547,7 @@ void TelexEngine::ApplyCases(std::wstring& result) const {
 
 // Shared validation: returns true if the current state would definitely produce
 // raw output on Commit. Used by both Peek() and Commit() to avoid duplicating
-// validation logic. Does NOT check C2Mode (requiresC2/forbidsC2) since Peek
-// needs to allow incomplete syllables during composition.
+// validation logic. Only skips requiresC2 check (user might still type C2).
 bool TelexEngine::IsDefinitelyInvalid() const {
     if (_state == TelexStates::Invalid) return true;
 
@@ -566,12 +565,22 @@ bool TelexEngine::IsDefinitelyInvalid() const {
     // Invalid C1
     if (!c1.empty() && !TelexData::ValidC1.count(c1)) return true;
 
-    // Invalid vowel (allow prefixes that user might still be building)
-    if (!v.empty() && !VowelMap().count(v) &&
-        !VowelTransitionPrefixSet().count(v) &&
-        !ValidVowelPrefixSet().count(v) &&
-        !WTransitionFromSet().count(v)) {
-        return true;
+    // Vowel validation
+    if (!v.empty()) {
+        auto it = VowelMap().find(v);
+        if (it != VowelMap().end()) {
+            // Valid vowel — check C2Mode forbidsC2 (e.g., ưi+n in "win")
+            // Only forbidsC2 is checked here; requiresC2 is Commit-only
+            // since user might still be typing the coda.
+            if (it->second.forbidsC2 && !_c2.empty()) return true;
+        } else {
+            // Not a valid vowel — allow if it's a prefix being built
+            if (!VowelTransitionPrefixSet().count(v) &&
+                !ValidVowelPrefixSet().count(v) &&
+                !WTransitionFromSet().count(v)) {
+                return true;
+            }
+        }
     }
 
     // Invalid C2
@@ -637,15 +646,11 @@ TelexStates TelexEngine::Commit() {
         return _state;
     }
 
-    // C2Mode constraints (complete syllable only — not checked by IsDefinitelyInvalid)
+    // requiresC2: complete syllable must have coda (e.g., iê, uô need C2)
+    // Note: forbidsC2 is already checked by IsDefinitelyInvalid()
     if (!_v.empty() && VowelMap().count(_v)) {
         const auto& vi = VowelMap().at(_v);
         if (vi.requiresC2 && _c2.empty()) {
-            _result = RetrieveRaw();
-            _state = TelexStates::CommittedInvalid;
-            return _state;
-        }
-        if (vi.forbidsC2 && !_c2.empty()) {
             _result = RetrieveRaw();
             _state = TelexStates::CommittedInvalid;
             return _state;
