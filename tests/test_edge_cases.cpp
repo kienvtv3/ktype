@@ -202,13 +202,21 @@ bool test_cross_raw() {
     return true;
 }
 
-// Z tone on untoned vowel should not consume the key (e.g., "size" not "sie")
+// Z tone on untoned vowel should not consume the key
 bool test_size_raw() {
     TelexEngine e;
     push(e, "size");
     ASSERT_WSTR_EQ(e.Peek(), L"size");
     e.Commit();
     ASSERT_WSTR_EQ(e.Retrieve(), L"size");
+    return true;
+}
+
+bool test_lazy_raw() {
+    TelexEngine e;
+    push(e, "lazy");
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"lazy");
     return true;
 }
 
@@ -272,6 +280,7 @@ void run_edge_case_tests() {
     RUN_TEST(test_peek_abbr_vndd);
     RUN_TEST(test_cross_raw);
     RUN_TEST(test_size_raw);
+    RUN_TEST(test_lazy_raw);
     RUN_TEST(test_standalone_aa);
     RUN_TEST(test_standalone_aw);
     RUN_TEST(test_non_standalone_aa);
