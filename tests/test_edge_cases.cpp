@@ -202,6 +202,16 @@ bool test_cross_raw() {
     return true;
 }
 
+// Z tone on untoned vowel should not consume the key (e.g., "size" not "sie")
+bool test_size_raw() {
+    TelexEngine e;
+    push(e, "size");
+    ASSERT_WSTR_EQ(e.Peek(), L"size");
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"size");
+    return true;
+}
+
 // Standalone Vietnamese alphabet letters (â, ă) should commit as-is
 bool test_standalone_aa() {
     ASSERT_WSTR_EQ(commit("aa"), L"\x00e2");   // â
@@ -261,6 +271,7 @@ void run_edge_case_tests() {
     RUN_TEST(test_peek_abbr_qdd);
     RUN_TEST(test_peek_abbr_vndd);
     RUN_TEST(test_cross_raw);
+    RUN_TEST(test_size_raw);
     RUN_TEST(test_standalone_aa);
     RUN_TEST(test_standalone_aw);
     RUN_TEST(test_non_standalone_aa);

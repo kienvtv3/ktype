@@ -416,6 +416,12 @@ bool TelexEngine::TryAddTone(wchar_t c) {
         return true;
     }
 
+    // Z on Z is redundant — reject so the char is handled as consonant/invalid
+    // (e.g., "size": 'z' after untoned 'i' should not be consumed)
+    if (newTone == Tones::Z && _t == Tones::Z) {
+        return false;
+    }
+
     _t = newTone;
     _respos.push_back(ResposTone);
     return true;
