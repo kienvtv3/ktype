@@ -81,7 +81,19 @@ STDMETHODIMP_(ULONG) ContextManager::Release() {
 // ITfThreadMgrEventSink
 STDMETHODIMP ContextManager::OnInitDocumentMgr(ITfDocumentMgr*) { return S_OK; }
 STDMETHODIMP ContextManager::OnUninitDocumentMgr(ITfDocumentMgr*) { return S_OK; }
-STDMETHODIMP ContextManager::OnSetFocus(ITfDocumentMgr*, ITfDocumentMgr*) { return S_OK; }
+STDMETHODIMP ContextManager::OnSetFocus(ITfDocumentMgr* docMgr, ITfDocumentMgr* prevDocMgr) {
+    // When focus moves to a different document, commit pending composition on old document
+    if (prevDocMgr && prevDocMgr != docMgr) {
+        ATL::CComPtr<ITfContext> prevContext;
+        if (SUCCEEDED(prevDocMgr->GetTop(&prevContext)) && prevContext) {
+            auto it = _contextMap.find(prevContext);
+            if (it != _contextMap.end() && it->second->HasPendingInput()) {
+                it->second->RequestCommit();
+            }
+        }
+    }
+    return S_OK;
+}
 STDMETHODIMP ContextManager::OnPushContext(ITfContext*) { return S_OK; }
 
 STDMETHODIMP ContextManager::OnPopContext(ITfContext* context) {
@@ -97,7 +109,17 @@ STDMETHODIMP ContextManager::OnPopContext(ITfContext* context) {
 }
 
 // ITfKeyEventSink
-STDMETHODIMP ContextManager::OnSetFocus(BOOL) { return S_OK; }
+STDMETHODIMP ContextManager::OnSetFocus(BOOL fForeground) {
+    // When thread loses foreground (e.g., Alt+Tab), commit all pending compositions
+    if (!fForeground) {
+        for (auto& pair : _contextMap) {
+            if (pair.second->HasPendingInput()) {
+                pair.second->RequestCommit();
+            }
+        }
+    }
+    return S_OK;
+}
 STDMETHODIMP ContextManager::OnPreservedKey(ITfContext*, REFGUID, BOOL* pfEaten) {
     *pfEaten = FALSE;
     return S_OK;

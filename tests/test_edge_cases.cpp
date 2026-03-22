@@ -220,6 +220,15 @@ bool test_lazy_raw() {
     return true;
 }
 
+// DoubleUndo: extra 'o' after oo→ô with C2 undoes transition (photoo→photo)
+bool test_photoo_undo() {
+    TelexEngine e;
+    push(e, "photoo");
+    e.Commit();
+    ASSERT_WSTR_EQ(e.Retrieve(), L"photo");
+    return true;
+}
+
 // Standalone Vietnamese alphabet letters (â, ă) should commit as-is
 bool test_standalone_aa() {
     ASSERT_WSTR_EQ(commit("aa"), L"\x00e2");   // â
@@ -281,6 +290,7 @@ void run_edge_case_tests() {
     RUN_TEST(test_cross_raw);
     RUN_TEST(test_size_raw);
     RUN_TEST(test_lazy_raw);
+    RUN_TEST(test_photoo_undo);
     RUN_TEST(test_standalone_aa);
     RUN_TEST(test_standalone_aw);
     RUN_TEST(test_non_standalone_aa);

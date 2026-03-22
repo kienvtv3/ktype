@@ -124,7 +124,7 @@ bool test_vt_nhuwox()    { ASSERT_WSTR_EQ(commit("nhuwox"), L"nhuwox"); return t
 // bool test_vt_toool()  { ASSERT_WSTR_EQ(commit("toool"), L"tool"); return true; }
 bool test_vt_cuwowwcj()  { ASSERT_WSTR_EQ(commit("cuwowwcj"), L"cuwowcj"); return true; }        // W double → invalid
 bool test_vt_quwowwns()  { ASSERT_WSTR_EQ(commit("quwowwns"), L"quwowns"); return true; }        // W double → invalid
-bool test_vt_khongoo()   { ASSERT_WSTR_EQ(commit("khongoo"), L"khongoo"); return true; }
+bool test_vt_khongoo()   { ASSERT_WSTR_EQ(commit("khongoo"), L"khongo"); return true; }          // DoubleUndo: extra 'o' undoes oo→ô
 bool test_vt_khongo()    { ASSERT_WSTR_EQ(commit("khongo"), L"kh\x00f4ng"); return true; }        // không
 bool test_vt_caasy()     { ASSERT_WSTR_EQ(commit("caasy"), L"c\x1ea5y"); return true; }           // cấy
 

@@ -282,10 +282,14 @@ bool TelexEngine::TryAddVowel(wchar_t c, bool ccase) {
     }
 
     // 1. Check if candidate matches a vowel transition (apply it)
-    // HACK: "khongoo" special case — when C2 is non-empty and V would become ôo, invalidate
-    // (VietType: if _c2 non-empty && c=='o' && V=="ôo", Invalidate instead of transitioning)
-    if (!_c2.empty() && c == L'o' && candidate == L"\x00f4o") {
-        return false;
+    // When C2 is present and ôo reverse transition would fire, use DoubleUndo instead
+    // so the extra 'o' undoes the oo→ô and gets filtered from output (photoo→photo)
+    if (!_c2.empty() && c == L'o' && candidate == L"\x00f4o" &&
+        !_respos.empty() && (_respos.back() & ResposTransitionV)) {
+        _cases.push_back(ccase);
+        _respos.push_back(_respos_current++ | ResposDoubleUndo);
+        _state = TelexStates::Invalid;
+        return true;
     }
     {
         auto vtIt = VowelTransitionMap().find(candidate);
