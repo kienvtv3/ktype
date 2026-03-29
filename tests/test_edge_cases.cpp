@@ -229,6 +229,12 @@ bool test_photoo_undo() {
     return true;
 }
 
+// quỳnh must produce correct Vietnamese, not raw "quyfnh"
+bool test_quynh() {
+    ASSERT_WSTR_EQ(commit("quyfnh"), L"qu\x1ef3nh");  // quỳnh
+    return true;
+}
+
 // Standalone Vietnamese alphabet letters (â, ă) should commit as-is
 bool test_standalone_aa() {
     ASSERT_WSTR_EQ(commit("aa"), L"\x00e2");   // â
@@ -291,6 +297,7 @@ void run_edge_case_tests() {
     RUN_TEST(test_size_raw);
     RUN_TEST(test_lazy_raw);
     RUN_TEST(test_photoo_undo);
+    RUN_TEST(test_quynh);
     RUN_TEST(test_standalone_aa);
     RUN_TEST(test_standalone_aw);
     RUN_TEST(test_non_standalone_aa);

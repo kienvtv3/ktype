@@ -35,15 +35,20 @@ STDMETHODIMP ContextManager::OnTestKeyDown(ITfContext* tfContext, WPARAM wParam,
         return S_OK;
     }
 
-    // Commit keys (Enter/Tab/Esc): eat if we need to commit first
-    if (KeyTranslator::IsCommitKey(wParam)) {
-        *pfEaten = ctx->HasPendingInput() ? TRUE : FALSE;
-        return S_OK;
-    }
-
-    // Edit/navigation keys: commit first if needed, then pass through
-    if (KeyTranslator::IsEditKey(wParam)) {
-        // We'll commit in OnKeyDown, don't eat
+    // Commit keys (Enter/Tab/Esc) and edit/navigation keys:
+    // Commit composition then let the key pass through to the app.
+    // Don't eat — if we eat in OnTestKeyDown, the app never gets the key
+    // (caused Enter/Tab double-press bug).
+    if (KeyTranslator::IsCommitKey(wParam) || KeyTranslator::IsEditKey(wParam)) {
+        if (ctx->HasPendingInput()) {
+            auto* session = new EditSession([ctx](TfEditCookie ec) -> HRESULT {
+                return ctx->CommitComposition(ec);
+            });
+            HRESULT hrSession;
+            tfContext->RequestEditSession(_clientId, session,
+                TF_ES_ASYNCDONTCARE | TF_ES_READWRITE, &hrSession);
+            session->Release();
+        }
         return S_OK;
     }
 
@@ -103,32 +108,8 @@ STDMETHODIMP ContextManager::OnKeyDown(ITfContext* tfContext, WPARAM wParam, LPA
         return S_OK;
     }
 
-    // Commit keys: commit composition then pass key through
-    if (KeyTranslator::IsCommitKey(wParam) && ctx->HasPendingInput()) {
-        auto* session = new EditSession([ctx](TfEditCookie ec) -> HRESULT {
-            return ctx->CommitComposition(ec);
-        });
-        HRESULT hrSession;
-        tfContext->RequestEditSession(_clientId, session,
-            TF_ES_ASYNCDONTCARE | TF_ES_READWRITE, &hrSession);
-        session->Release();
-        // Don't eat the key — let Enter/Tab/Esc pass through to the app
-        *pfEaten = FALSE;
-        return S_OK;
-    }
-
-    // Edit/navigation keys: commit if needed
-    if (KeyTranslator::IsEditKey(wParam) && ctx->HasPendingInput()) {
-        auto* session = new EditSession([ctx](TfEditCookie ec) -> HRESULT {
-            return ctx->CommitComposition(ec);
-        });
-        HRESULT hrSession;
-        tfContext->RequestEditSession(_clientId, session,
-            TF_ES_ASYNCDONTCARE | TF_ES_READWRITE, &hrSession);
-        session->Release();
-        *pfEaten = FALSE;
-        return S_OK;
-    }
+    // Commit keys and edit keys are handled in OnTestKeyDown (commit + pass through)
+    // OnKeyDown is not called for them since pfEaten=FALSE in OnTestKeyDown
 
     wchar_t ch = KeyTranslator::VkToChar(wParam, lParam, keyState);
     if (!ch) return S_OK;

@@ -591,7 +591,10 @@ bool TelexEngine::IsDefinitelyInvalid() const {
             // Valid vowel — check C2Mode forbidsC2 (e.g., ưi+n in "win")
             // Only forbidsC2 is checked here; requiresC2 is Commit-only
             // since user might still be typing the coda.
-            if (it->second.forbidsC2 && !_c2.empty()) return true;
+            // Skip forbidsC2 when C1="qu" — the 'u' is logically part of the
+            // vowel (VietType uses C1="q",V="uy"; KType uses C1="qu",V="y")
+            // so "quỳnh" (C1="qu",V="y",C2="nh") is valid despite "y" being NoC2
+            if (it->second.forbidsC2 && !_c2.empty() && c1 != L"qu") return true;
         } else {
             // Not a valid vowel — allow if it's a prefix being built
             if (!VowelTransitionPrefixSet().count(v) &&
