@@ -36,19 +36,9 @@ STDMETHODIMP ContextManager::OnTestKeyDown(ITfContext* tfContext, WPARAM wParam,
     }
 
     // Commit keys (Enter/Tab/Esc) and edit/navigation keys:
-    // Commit composition then let the key pass through to the app.
-    // Don't eat — if we eat in OnTestKeyDown, the app never gets the key
-    // (caused Enter/Tab double-press bug).
+    // Eat if pending input — OnKeyDown will commit then re-inject the key
     if (KeyTranslator::IsCommitKey(wParam) || KeyTranslator::IsEditKey(wParam)) {
-        if (ctx->HasPendingInput()) {
-            auto* session = new EditSession([ctx](TfEditCookie ec) -> HRESULT {
-                return ctx->CommitComposition(ec);
-            });
-            HRESULT hrSession;
-            tfContext->RequestEditSession(_clientId, session,
-                TF_ES_ASYNCDONTCARE | TF_ES_READWRITE, &hrSession);
-            session->Release();
-        }
+        *pfEaten = ctx->HasPendingInput() ? TRUE : FALSE;
         return S_OK;
     }
 
@@ -108,8 +98,30 @@ STDMETHODIMP ContextManager::OnKeyDown(ITfContext* tfContext, WPARAM wParam, LPA
         return S_OK;
     }
 
-    // Commit keys and edit keys are handled in OnTestKeyDown (commit + pass through)
-    // OnKeyDown is not called for them since pfEaten=FALSE in OnTestKeyDown
+    // Commit keys (Enter/Tab/Esc) and edit/navigation keys:
+    // Commit composition then re-inject the key so the app gets it.
+    // We must eat + re-inject because:
+    // - If we don't eat in OnTestKeyDown, the key arrives before commit completes
+    // - If we eat but don't re-inject, the app never gets the key (double-press bug)
+    if ((KeyTranslator::IsCommitKey(wParam) || KeyTranslator::IsEditKey(wParam)) &&
+        ctx->HasPendingInput()) {
+        auto* session = new EditSession([ctx](TfEditCookie ec) -> HRESULT {
+            return ctx->CommitComposition(ec);
+        });
+        HRESULT hrSession;
+        tfContext->RequestEditSession(_clientId, session,
+            TF_ES_ASYNCDONTCARE | TF_ES_READWRITE, &hrSession);
+        session->Release();
+
+        // Re-inject the key — composition is now committed, so next time through
+        // HasPendingInput()=false and OnTestKeyDown won't eat it
+        BYTE scanCode = (BYTE)((lParam >> 16) & 0xFF);
+        keybd_event((BYTE)wParam, scanCode, 0, 0);
+        keybd_event((BYTE)wParam, scanCode, KEYEVENTF_KEYUP, 0);
+
+        *pfEaten = TRUE;  // We handled the original key
+        return S_OK;
+    }
 
     wchar_t ch = KeyTranslator::VkToChar(wParam, lParam, keyState);
     if (!ch) return S_OK;
